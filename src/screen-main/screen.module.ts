@@ -7,7 +7,8 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 @Module({
   imports: [TypeOrmModule.forFeature([ScreenEntity])],
   controllers: [ScreenController],
-  providers: [ScreenService]
+  providers: [ScreenService],
+  exports: [ScreenService]
 })
 export class ScreenModule {
 }

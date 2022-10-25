@@ -20,3 +20,9 @@ export class AdminEntity {
   // @Column({nullable: true})
   // lastLoginDate: Date| undefined;
 }
+
+
+export class RegisterScreenDTO {
+  screenId: string;
+  authKey: string;
+}

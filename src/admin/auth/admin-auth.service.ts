@@ -1,16 +1,32 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, OnModuleInit } from "@nestjs/common";
 import * as bcrypt from "bcrypt";
 import { JwtService } from "@nestjs/jwt";
 import { AdminService } from "../admin.service";
+import { Cron, CronExpression } from "@nestjs/schedule";
 
 @Injectable()
-export class AdminAuthService {
+export class AdminAuthService implements OnModuleInit {
+  authKey: string;
+  private blacklist: string[] = [];
+
   constructor(
     private adminService: AdminService,
     private jwtService: JwtService
   ) {
   }
 
+  onModuleInit() {
+    //this.authKey = randomStringGenerator();
+    this.authKey = "af5bb535-1efc-4d23-ad53-9d84e7174f1f";
+    console.log("KEY: " + this.authKey);
+  }
+
+  @Cron(CronExpression.EVERY_30_SECONDS)
+  handleBlacklistClean() {
+    this.blacklist = this.blacklist.filter((x) => {
+      return this.jwtService.verify(x);
+    });
+  }
 
   async validateUser(username: string, pass: string): Promise<any> {
     const user = await this.adminService.findAdmin(username);
@@ -28,8 +44,17 @@ export class AdminAuthService {
     };
   }
 
-
   logout(id: string) {
+    this.blacklist.push(id);
+  }
 
+  isTokenBlacklisted(token: string, id: string) {
+    if (this.blacklist.includes(token))
+      return true;
+    else if (this.blacklist.includes(id)) {
+      delete this.blacklist[id];
+      this.blacklist.push(token);
+    }
+    return this.blacklist.includes(token);
   }
 }

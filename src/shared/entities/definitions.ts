@@ -1,15 +1,15 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, PrimaryColumn } from "typeorm";
 
 @Entity()
 export class ScreenEntity {
 
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryColumn()
+  id: string;
   @Column()
   name: string;
   @Column()
   lastIp: string;
-  @Column()
+  @Column({ default: "pl" })
   language: string;
   @Column()
   authKey: string;
@@ -17,8 +17,10 @@ export class ScreenEntity {
   isConnected: boolean;
   @Column({ default: "info" })
   currentDisplayMode: string;
-  @Column()
+  @Column({ nullable: true })
   lastConnection: Date;
+  @Column({ default: false })
+  isRegistered: boolean;
 
   constructor() {
   }

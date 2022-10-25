@@ -3,8 +3,10 @@ import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { ScreenModule } from "./screen-main/screen.module";
-import { AdminAuthModule } from "./admin/auth/admin-auth.module";
 import { ConfigModule } from "@nestjs/config";
+import { ScheduleModule } from "@nestjs/schedule";
+import { AdminMainModule } from "./admin/admin.module";
+import { TelegramModule } from "./telegram/telegram.module";
 
 @Module({
   imports: [
@@ -22,8 +24,10 @@ import { ConfigModule } from "@nestjs/config";
     ConfigModule.forRoot({
       isGlobal: true
     }),
+    ScheduleModule.forRoot(),
     ScreenModule,
-    AdminAuthModule
+    AdminMainModule,
+    TelegramModule
   ],
   controllers: [AppController],
   providers: [AppService]

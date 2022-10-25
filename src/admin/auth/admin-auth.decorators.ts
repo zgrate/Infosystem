@@ -1,12 +1,14 @@
 import { Role, ROLES_KEY } from "./role.enum";
 import { applyDecorators, createParamDecorator, ExecutionContext, SetMetadata, UseGuards } from "@nestjs/common";
-import { JwtAuthGuard } from "./guards/jwt.guard";
 import { RolesGuard } from "./guards/roles.guard";
+import { AcceptGuard } from "./guards/accept.all.guard";
 
 export const Roles = (...roles: Role[]) => SetMetadata(ROLES_KEY, roles);
 
 export function AdminAuth() {
-  return applyDecorators(UseGuards(JwtAuthGuard, RolesGuard));
+  return applyDecorators(
+    UseGuards(AcceptGuard, RolesGuard)
+  );
 }
 
 export const AdminUser = createParamDecorator(
@@ -18,4 +20,8 @@ export const AdminUser = createParamDecorator(
 
 export function Sudo() {
   return applyDecorators(AdminAuth(), Roles(Role.Sudo));
+}
+
+export function Admin() {
+  return applyDecorators(AdminAuth(), Roles(Role.Admin));
 }

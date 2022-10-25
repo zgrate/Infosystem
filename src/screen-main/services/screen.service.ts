@@ -12,8 +12,22 @@ export class ScreenService {
   ) {
   }
 
-  getScreenByID(id: number): Promise<ScreenEntity> {
+  getScreenByID(id: string): Promise<ScreenEntity> {
     return this.screenDB.findOneBy({ id: id });
+  }
+
+  getScreenByIDUnregistered(id: string): Promise<any> {
+    return this.getScreenByID(id).then((screen) => {
+      const {
+        authKey,
+        isConnected,
+        currentDisplayMode,
+        lastConnection,
+        lastIp,
+        ...results
+      } = screen;
+      return results;
+    });
   }
 
   async registerNewScreen(clientIp: string): Promise<ScreenEntity> {
@@ -22,10 +36,21 @@ export class ScreenService {
     screen.authKey = authcode.toString();
     screen.name = randomStringGenerator();
     screen.lastIp = clientIp;
+    screen.id = randomStringGenerator();
 
     await this.screenDB.save(screen);
 
     console.log(screen.id);
     return screen;
+  }
+
+  async authScreen(screenId: string, authKey: string) {
+    const screen = await this.getScreenByID(screenId);
+    if (screen == null || screen.isRegistered || screen.authKey != authKey) {
+      return false;
+    }
+    screen.isRegistered = true;
+    await this.screenDB.save(screen);
+    return true;
   }
 }
