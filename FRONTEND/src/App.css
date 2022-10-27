@@ -1,0 +1,89 @@
+.App {
+    text-align: center;
+}
+
+.App-logo {
+    height: 40vmin;
+    pointer-events: none;
+}
+
+.App-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: black;
+}
+
+.Container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 20px;
+}
+
+.App-link {
+    color: #61dafb;
+}
+
+body {
+    background-image: url("../public/images/background.jpg");
+    background-clip: border-box;
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+
+.table-background {
+    background-clip: padding-box;
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+}
+
+.table-header {
+    background-image: url('../public/images/table/table-header.png');
+    font-size: calc(10px);
+    padding-left: calc(10px + 3vmin);
+    padding-right: calc(10px + 3vmin);
+}
+
+.table-content {
+    background-image: url('../public/images/table/table-content.png');
+    font-size: calc(10px + 2vmin);
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.Footer {
+    display: flex;
+    flex-direction: column;
+}
+
+.MarqueeOrg {
+    background-color: red;
+    font-size: calc(20px + 2vmin);
+    margin-top: auto;
+}
+
+.Userfeed {
+    font-size: calc(30px);
+    background-size: 1000px 50px;
+    height: 50px;
+    text-wrap: none;
+    white-space: nowrap;
+    background-repeat: no-repeat;
+    background-image: url("../public/images/background_feed.png");
+    width: 1000px;
+    padding-bottom: 10px;
+    padding-top: 2px;
+    margin: 10px auto;
+
+}
+
+.MarqueeText {
+    width: calc(400px * 2vmin);
+    margin-left: 20px;
+    white-space: nowrap;
+    border-left: 10px solid;
+    padding-left: 10px;
+}
+
