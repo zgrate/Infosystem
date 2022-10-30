@@ -12,21 +12,29 @@ export class ScreenService {
   ) {
   }
 
+  getScreensAdmin(): Promise<ScreenEntity[]> {
+    return this.screenDB.find();
+  }
+
   getScreenByID(id: string): Promise<ScreenEntity> {
     return this.screenDB.findOneBy({ id: id });
   }
 
   getScreenByIDUnregistered(id: string): Promise<any> {
     return this.getScreenByID(id).then((screen) => {
-      const {
-        authKey,
-        isConnected,
-        currentDisplayMode,
-        lastConnection,
-        lastIp,
-        ...results
-      } = screen;
-      return results;
+      if (screen != null) {
+        const {
+          authKey,
+          isConnected,
+          currentDisplayMode,
+          lastConnection,
+          lastIp,
+          ...results
+        } = screen;
+        return results;
+      } else {
+        return null;
+      }
     });
   }
 
@@ -44,6 +52,14 @@ export class ScreenService {
     return screen;
   }
 
+  async getScreenWithAuthCheck(screenId: string) {
+    const screen = await this.getScreenByID(screenId);
+    if (screen !== null && screen.isRegistered) {
+      return screen;
+    }
+    return undefined;
+  }
+
   async authScreen(screenId: string, authKey: string) {
     const screen = await this.getScreenByID(screenId);
     if (screen == null || screen.isRegistered || screen.authKey != authKey) {
@@ -52,5 +68,15 @@ export class ScreenService {
     screen.isRegistered = true;
     await this.screenDB.save(screen);
     return true;
+  }
+
+  async setMode(screenId: string, mode: string): Promise<boolean> {
+    const screen = await this.getScreenWithAuthCheck(screenId);
+    if (screen === undefined)
+      return false;
+    screen.currentDisplayMode = mode;
+    await this.screenDB.save(screen);
+    return true;
+
   }
 }

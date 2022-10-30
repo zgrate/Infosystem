@@ -7,6 +7,11 @@ import { ConfigModule } from "@nestjs/config";
 import { ScheduleModule } from "@nestjs/schedule";
 import { AdminMainModule } from "./admin/admin.module";
 import { TelegramModule } from "./telegram/telegram.module";
+import { ScreenWebSocketModule } from "./screen-ws/screen-ws.module";
+import { EventEmitterModule } from "@nestjs/event-emitter";
+import { ScreenAdmin } from "./screen-admin/screen-admin.module";
+import { ProgramModule } from "./program/program.module";
+import { ScreenModesModule } from "./screen-modes/screen-modes.module";
 
 @Module({
   imports: [
@@ -25,9 +30,14 @@ import { TelegramModule } from "./telegram/telegram.module";
       isGlobal: true
     }),
     ScheduleModule.forRoot(),
+    EventEmitterModule.forRoot(),
     ScreenModule,
+    ScreenAdmin,
     AdminMainModule,
-    TelegramModule
+    ProgramModule,
+    TelegramModule,
+    ScreenWebSocketModule,
+    ScreenModesModule
   ],
   controllers: [AppController],
   providers: [AppService]

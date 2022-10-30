@@ -11,6 +11,7 @@ export function showProgram(rows: Array<{ startTime: string, newStartTime: strin
         <th className="table-background table-header">
           <h1>Sala</h1>
         </th>
+
       </tr>
 
       {

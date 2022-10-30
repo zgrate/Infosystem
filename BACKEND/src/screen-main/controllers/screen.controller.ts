@@ -1,4 +1,13 @@
-import { Controller, Get, InternalServerErrorException, Ip, NotFoundException, Param, Post } from "@nestjs/common";
+import {
+  BadRequestException,
+  Controller,
+  Get,
+  InternalServerErrorException,
+  Ip,
+  NotFoundException,
+  Param,
+  Post
+} from "@nestjs/common";
 import { ScreenService } from "../services/screen.service";
 import { ScreenEntity } from "../../shared/entities/definitions";
 import { RegisteredScreen, ScreenID } from "../screen.decorators";
@@ -20,19 +29,25 @@ export class ScreenController {
     }
   }
 
-  @Post(":id")
+  @Post("login/:id")
   @RegisteredScreen()
   async loginScreen(@Param() params): Promise<ScreenEntity> {
     throw new InternalServerErrorException();
   }
 
-  @Get(":id")
+  @Get("get/:id")
   async getScreen(@ScreenID() screenId) {
-    return this.screenService.getScreenByIDUnregistered(screenId);
+    const screen = await this.screenService.getScreenByIDUnregistered(screenId);
+    if (screen == null) {
+      throw new BadRequestException();
+    } else {
+      return screen;
+    }
   }
 
   @Post()
   async registerNewScreen(@Ip() ip: string): Promise<ScreenEntity> {
     return this.screenService.registerNewScreen(ip);
   }
+
 }

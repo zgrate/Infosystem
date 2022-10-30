@@ -9,7 +9,8 @@ const ProgramSourceProvider = {
 
 @Module({
   imports: [],
-  providers: [ProgramSourceProvider]
+  providers: [ProgramSourceProvider],
+  exports: [ProgramIntegrationInterface]
 })
 export class ProgramModule {
 }

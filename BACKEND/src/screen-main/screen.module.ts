@@ -5,7 +5,9 @@ import { ScreenEntity } from "../shared/entities/definitions";
 import { TypeOrmModule } from "@nestjs/typeorm";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([ScreenEntity])],
+  imports: [
+    TypeOrmModule.forFeature([ScreenEntity])
+  ],
   controllers: [ScreenController],
   providers: [ScreenService],
   exports: [ScreenService]
