@@ -12,16 +12,17 @@ import { EventEmitterModule } from "@nestjs/event-emitter";
 import { ScreenAdmin } from "./screen-admin/screen-admin.module";
 import { ProgramModule } from "./program/program.module";
 import { ScreenModesModule } from "./screen-modes/screen-modes.module";
+import { AccreditationModule } from "./accreditation/accreditation.module";
 
 @Module({
   imports: [
     TypeOrmModule.forRoot({
-      type: "sqlite",
-      database: "db.sqlite",
-      // host: 'localhost',
-      // port: 3306,
-      // username: 'root',
-      // password: 'root',
+      type: "postgres",
+      database: "Futrolajki",
+      host: "futrolajki.zgrate.ovh",
+      port: 5020,
+      username: "futrolajki",
+      password: "amamama111",
       // database: 'test',
       autoLoadEntities: true,
       synchronize: true
@@ -37,7 +38,8 @@ import { ScreenModesModule } from "./screen-modes/screen-modes.module";
     ProgramModule,
     TelegramModule,
     ScreenWebSocketModule,
-    ScreenModesModule
+    ScreenModesModule,
+    AccreditationModule
   ],
   controllers: [AppController],
   providers: [AppService]
