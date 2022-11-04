@@ -20,7 +20,7 @@ export const ScreenMain = () => {
   return <div className="App">
     <ShowMessage message={testMsg.message} iconUrl={testMsg.iconUrl} />
     {/*<AllScheduleView rows={rows}/>*/}
-    <StreamView />
+    <StreamView streamLink={"https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8"} playerStyle={{}} />
     <div className="Footer">
       {getMarqueeOrg(message_org)}
     </div>

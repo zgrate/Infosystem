@@ -106,8 +106,42 @@ const CheckForKeys = (props: { keysFree: boolean }) => {
   }
 };
 
+const PaymentInfo = (props: { acc: RegisteredAcc }) => {
+
+  if (props.acc.outStandingPaymentAccreditation > 0) {
+    if (props.acc.outStandingPaymentHotel !== undefined && props.acc.outStandingPaymentHotel > 0) {
+      return <div>
+        <div>
+          Zaległość: Akredytacja {props.acc.outStandingPaymentAccreditation}
+        </div>
+        <div>
+          Zaległość: Hotel {props.acc.outStandingPaymentHotel}
+        </div>
+      </div>;
+    } else {
+      return <div>
+        Zaległość: Akredytacja {props.acc.outStandingPaymentAccreditation}
+      </div>;
+    }
+  } else {
+    return <></>;
+  }
+};
+
+export const TypeInfo = (props: { acc: RegisteredAcc }) => {
+  if (props.acc.planSelected === 100) {
+    return <div>Uczestnik</div>;
+  } else if (props.acc.planSelected === 150) {
+    return <div style={{ backgroundColor: "violet" }}>Sponsor</div>;
+  } else if (props.acc.planSelected === 200) {
+    return <div style={{ backgroundColor: "gold" }}>Filantrop</div>;
+  } else {
+    return <div>INVALID PLAN SELECTED {props.acc.planSelected}</div>;
+  }
+};
+
 export const ShowBadge = (props: { acc: RegisteredAcc, checkInKey: (id: number) => void }) => {
-  const img = "http://info.futrolajki.pl:5009/badge/" + props.acc.id + ".jpg";
+  const img = "https://res.futrolajki.pl/badge/" + props.acc.id + ".jpg";
   return (
     <>
       <div style={{ fontSize: "3vh", display: "flex", flexDirection: "row", justifyContent: "center", margin: "20px" }}>
@@ -117,6 +151,7 @@ export const ShowBadge = (props: { acc: RegisteredAcc, checkInKey: (id: number) 
         <div style={{ margin: "30px" }}>
           <CheckIn checkIn={props.acc.checkIn} />
           <CheckForKeys keysFree={props.acc.keysFree} />
+          <TypeInfo acc={props.acc} />
           <div>
             {props.acc.id} - {props.acc.nickname}
           </div>
@@ -149,7 +184,11 @@ export const ShowBadge = (props: { acc: RegisteredAcc, checkInKey: (id: number) 
           <div className={"MarginTop"}>
             <span>Dodatkowe Informacje: {props.acc.additionalInfo === null ? "NIE" : props.acc.additionalInfo}</span>
           </div>
+          <div className={"MarginTop"}>
+            <div>Wybrana: {props.acc.planSelected}</div>
 
+          </div>
+          <PaymentInfo acc={props.acc} />
         </div>
 
 
@@ -193,7 +232,6 @@ export const InternalAccreditationSystem = (params: { inputRef: RefObject<HTMLIn
         axiosService.get("accreditation/items/" + filteredList[0].id).then((bdg) => {
           setBadge(bdg.data);
           setLoading(false);
-
         });
         setLoading(true);
       }
@@ -204,7 +242,6 @@ export const InternalAccreditationSystem = (params: { inputRef: RefObject<HTMLIn
           console.log("TEST");
           axiosService.post("accreditation/checkin/" + id).then(it => {
             setLoading(false);
-            console.log(it.data);
             if (it.data) {
               params.setFilter("");
             } else {
@@ -255,7 +292,15 @@ export const AcreditionSystem = () => {
       </div>
       <input ref={inputRef} value={currentFilter} type="text" height={"5vh"}
              style={{ height: "5vh", fontSize: "2vh", width: "40vw" }}
-             onChange={(e) => setCurrentFilter(e.target.value)} />
+             onChange={(e) => setCurrentFilter(e.target.value)}
+             onKeyDown={(e) => {
+               console.log(e.key);
+               if (e.key === "enter")
+                 setCurrentFilter(inputRef.current!.value);
+             }
+             }
+
+      />
       <InternalAccreditationSystem setFilter={(it) => {
         console.log("E");
         setCurrentFilter(it);

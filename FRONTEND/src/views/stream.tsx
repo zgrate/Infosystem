@@ -1,11 +1,12 @@
 import ReactHlsPlayer from "react-hls-player";
-import React from "react";
+import React, { CSSProperties } from "react";
 
 
-export const StreamView = (props: any) => {
+export const StreamView = (props: { streamLink: string, playerStyle: CSSProperties | undefined }) => {
   const playerRef = React.useRef<HTMLVideoElement>() as React.MutableRefObject<HTMLVideoElement>;
   return <ReactHlsPlayer
-    src="https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8"
+    style={props.playerStyle}
+    src={props.streamLink}
     autoPlay={false}
     controls={true}
     width="100%"

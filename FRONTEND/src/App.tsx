@@ -3,6 +3,7 @@ import "./App.css";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { ScreenMain } from "./screens/screen";
 import { AcreditionSystem } from "./accreditation/acredition-system";
+import { DJView } from "./dj/dj";
 
 export interface ProgramEntry {
   startTime: string;
@@ -52,7 +53,7 @@ function App() {
       <Routes>
         <Route path="/" element={<ScreenMain />} />
         <Route path="/acc" element={<AcreditionSystem />} />
-
+        <Route path="/dj" element={<DJView />} />
       </Routes>
     </Router>
   );

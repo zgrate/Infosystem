@@ -16,19 +16,18 @@ import { AccreditationModule } from "./accreditation/accreditation.module";
 
 @Module({
   imports: [
-    TypeOrmModule.forRoot({
-      type: "postgres",
-      database: "Futrolajki",
-      host: "futrolajki.zgrate.ovh",
-      port: 5020,
-      username: "futrolajki",
-      password: "amamama111",
-      // database: 'test',
-      autoLoadEntities: true,
-      synchronize: true
-    }),
     ConfigModule.forRoot({
       isGlobal: true
+    }),
+    TypeOrmModule.forRoot({
+      type: "postgres",
+      database: process.env.DB_DB,
+      host: process.env.DB_IP,
+      port: +process.env.DB_PORT,
+      username: process.env.DB_USER,
+      password: process.env.DB_PASS,
+      autoLoadEntities: true,
+      synchronize: true
     }),
     ScheduleModule.forRoot(),
     EventEmitterModule.forRoot(),

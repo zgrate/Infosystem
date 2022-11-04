@@ -17,7 +17,7 @@ export class Forbidden extends BackendException {
 
 
 export const axiosService = axios.create({
-  baseURL: process.env.REACT_APP_API_URL
+  baseURL: "https://api.futrolajki.pl"
 });
 
 if (localStorage.getItem("access_token")) {
