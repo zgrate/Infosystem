@@ -1,14 +1,14 @@
 import { Injectable } from "@nestjs/common";
 import { CreateUpdateAccreditationDto } from "./dto/create-update-accreditation.dto";
-import { Accreditation } from "./entities/accreditation.entity";
+import { AccreditationEntity } from "./entities/accreditation.entity";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { Like, Repository } from "typeorm";
 
 @Injectable()
 export class AccreditationService {
   constructor(
-    @InjectRepository(Accreditation)
-    private accRepository: Repository<Accreditation>
+    @InjectRepository(AccreditationEntity)
+    private accRepository: Repository<AccreditationEntity>
   ) {
   }
 
@@ -32,8 +32,7 @@ export class AccreditationService {
     return this.accRepository.findOneBy({ id: id }).then(async (it) => {
       if (it !== null) {
         if (it.roomNumber != undefined)
-          it.keysFree = !await this.getKeyStatus(it.roomNumber);
-
+          it.keysFree = !(await this.getKeyStatus(it.roomNumber));
       }
 
       return it;
@@ -53,9 +52,29 @@ export class AccreditationService {
   }
 
   async getKeyStatus(room: number) {
-    return this.accRepository
-      .findBy({ roomNumber: room })
-      .then((items) => items.some((it) => it.checkIn));
+    return this.accRepository.findBy({ roomNumber: room }).then((items) => {
+      if (items === undefined) {
+        return false;
+      }
+      return items.some((it) => it.checkIn);
+    });
+  }
+
+  async findOneFilter(query: string) {
+    console.log(query + " " + Number(query));
+    if (!isNaN(Number(query))) {
+      return this.accRepository.findOneBy({
+        id: Number(query)
+      });
+    } else {
+      return this.accRepository.findOne({
+        where: [
+          { nickname: Like("%" + query + "%") },
+          { name: Like("%" + query + "%") },
+          { surname: Like("%" + query + "%") }
+        ]
+      });
+    }
   }
 
   async checkInUser(id: number) {

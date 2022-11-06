@@ -1,7 +1,7 @@
 import { Column, Entity, PrimaryColumn } from "typeorm";
 
 @Entity()
-export class Accreditation {
+export class AccreditationEntity {
   @PrimaryColumn()
   id: number;
 

@@ -33,26 +33,17 @@ export class ProgramEntity {
   eventType: EventType;
 
   @Column()
+  eventStartTime: Date;
+
+  @Column()
+  changeStartTime: Date;
+
+  @Column()
   eventScheduledLocation: string;
-
-  @Column()
-  startScheduledConventionDay: number;
-
-  @Column()
-  eventScheduledStartTimeHour: string;
 
   @Column({ nullable: true })
   eventScheduledDurationMinutes: number;
 
   @Column({ nullable: true })
-  eventChangedStartTimeHour: string;
-
-  @Column({ nullable: true })
-  eventChangedDurationTimeMinutes: number;
-
-  @Column({ nullable: true })
   eventChangedRoom: string;
-
-  @Column({ nullable: true })
-  eventChangedDay: number;
 }

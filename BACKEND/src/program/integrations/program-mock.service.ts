@@ -4,7 +4,7 @@ import { ProgramEntity } from "../entities/program.entity";
 
 @Injectable()
 export class ProgramMockService extends ProgramIntegrationInterface {
-  getListProgram(filter: ProgramFilter | null): Array<ProgramEntity> | Promise<Array<ProgramEntity>> {
+  getListProgram(filter: ProgramFilter | null): Promise<Array<ProgramEntity>> {
     return undefined;
   }
 

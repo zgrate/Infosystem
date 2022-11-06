@@ -13,6 +13,8 @@ import { ScreenAdmin } from "./screen-admin/screen-admin.module";
 import { ProgramModule } from "./program/program.module";
 import { ScreenModesModule } from "./screen-modes/screen-modes.module";
 import { AccreditationModule } from "./accreditation/accreditation.module";
+import { TelegrafModule } from "nestjs-telegraf";
+import { CatchThemAllModule } from "./catch-them-all/base/catch-them-all.module";
 
 @Module({
   imports: [
@@ -29,6 +31,9 @@ import { AccreditationModule } from "./accreditation/accreditation.module";
       autoLoadEntities: true,
       synchronize: true
     }),
+    TelegrafModule.forRoot({
+      token: "1326259022:AAFrb-ybMyN3jBP3nhKkq8PlRgNiN0acTqU"
+    }),
     ScheduleModule.forRoot(),
     EventEmitterModule.forRoot(),
     ScreenModule,
@@ -38,7 +43,8 @@ import { AccreditationModule } from "./accreditation/accreditation.module";
     TelegramModule,
     ScreenWebSocketModule,
     ScreenModesModule,
-    AccreditationModule
+    AccreditationModule,
+    CatchThemAllModule
   ],
   controllers: [AppController],
   providers: [AppService]

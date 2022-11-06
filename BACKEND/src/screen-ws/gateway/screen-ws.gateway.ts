@@ -1,12 +1,4 @@
-import {
-  ConnectedSocket,
-  MessageBody,
-  OnGatewayConnection,
-  OnGatewayDisconnect,
-  SubscribeMessage,
-  WebSocketGateway,
-  WebSocketServer
-} from "@nestjs/websockets";
+import { OnGatewayConnection, OnGatewayDisconnect, WebSocketGateway, WebSocketServer } from "@nestjs/websockets";
 import { Server, Socket } from "socket.io";
 import { OnEvent } from "@nestjs/event-emitter";
 import { MODE_CHANGE_EVENT, ModeChangeEvent } from "../../screen-events/events/mode-change.event";
@@ -38,14 +30,6 @@ export class ScreenWsGateway
   server!: Server;
 
   constructor(private screenService: ScreenService) {
-  }
-
-  @SubscribeMessage("test")
-  handleEvent(@MessageBody() body, @ConnectedSocket() client: Socket) {
-    console.log("TEST ", body);
-    client.emit("mode", "TEST");
-    this.server.emit("mode", "GLOBAL?");
-    return "TEST2";
   }
 
   @OnEvent(MODE_CHANGE_EVENT)
