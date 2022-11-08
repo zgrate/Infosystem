@@ -15,6 +15,7 @@ import { ScreenModesModule } from "./screen-modes/screen-modes.module";
 import { AccreditationModule } from "./accreditation/accreditation.module";
 import { TelegrafModule } from "nestjs-telegraf";
 import { CatchThemAllModule } from "./catch-them-all/base/catch-them-all.module";
+import { DbConfigModule } from "./db-config/db-config.module";
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { CatchThemAllModule } from "./catch-them-all/base/catch-them-all.module"
       autoLoadEntities: true,
       synchronize: true
     }),
+    DbConfigModule,
     TelegrafModule.forRoot({
       token: "1326259022:AAFrb-ybMyN3jBP3nhKkq8PlRgNiN0acTqU"
     }),

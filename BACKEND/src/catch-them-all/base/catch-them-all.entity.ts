@@ -13,7 +13,7 @@ export class CatchThemAllEntity {
   @Column()
   fursuitName: string;
 
-  @OneToMany(() => CatchThemAllCatchEntity, (it) => it.fursuitId)
+  @OneToMany(() => CatchThemAllCatchEntity, (it) => it.fursuit, { cascade: true })
   catched: CatchThemAllCatchEntity[];
 }
 
@@ -23,7 +23,7 @@ export class CatchThemAllCatchEntity {
   catchId: number;
 
   @ManyToOne(() => CatchThemAllEntity)
-  fursuitId: string;
+  fursuit: CatchThemAllEntity;
 
   @Column()
   tgUser: string;
