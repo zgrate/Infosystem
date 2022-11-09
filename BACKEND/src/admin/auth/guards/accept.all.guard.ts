@@ -17,7 +17,8 @@ export class AcceptGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
     if (
       request.headers["authorization"] ==
-      "Bearer " + this.adminAuthService.authKey
+      "Bearer " + this.adminAuthService.authKey ||
+      request.headers["authorization"] == "Bearer " + this.adminAuthService.adminPassword
     ) {
       console.log("ADMIN");
       return this.adminService.findAdmin("admin").then((it) => {

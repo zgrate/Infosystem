@@ -9,7 +9,7 @@ import {
   Post
 } from "@nestjs/common";
 import { ScreenService } from "../services/screen.service";
-import { ScreenEntity } from "../../shared/entities/definitions";
+import { ScreenEntity } from "../../shared/entities/screen.entity";
 import { RegisteredScreen, ScreenID } from "../screen.decorators";
 
 @Controller("screen")

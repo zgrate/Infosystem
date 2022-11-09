@@ -1,4 +1,4 @@
-import { All, Controller, Get, Post, Req, UseGuards } from "@nestjs/common";
+import { All, Controller, Get, Post, Req, Request, UseGuards } from "@nestjs/common";
 import { LocalAuthGuard } from "./guards/local-auth.guard";
 import { AdminAuthService } from "./admin-auth.service";
 import { AdminAuth, AdminUser, Sudo } from "./admin-auth.decorators";
@@ -6,7 +6,10 @@ import { AdminService } from "../admin.service";
 
 @Controller("/admin/auth")
 export class AdminAuthController {
-  constructor(private adminAuthService: AdminAuthService, private adminService: AdminService) {
+  constructor(
+    private adminAuthService: AdminAuthService,
+    private adminService: AdminService
+  ) {
   }
 
   @UseGuards(LocalAuthGuard)
@@ -21,6 +24,13 @@ export class AdminAuthController {
     return this.adminAuthService.logout(id);
   }
 
+  @Get("self")
+  @Sudo()
+  async self(@Request() request): Promise<any> {
+    const { password, ...rest } = request.user;
+    return rest;
+  }
+
   @Get("list")
   @Sudo()
   async listAccounts(): Promise<any[]> {
@@ -28,5 +38,4 @@ export class AdminAuthController {
       return admin.map(({ password, ...result }) => result);
     });
   }
-
 }

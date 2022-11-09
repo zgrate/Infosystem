@@ -17,7 +17,7 @@ export class ProgramService {
     return this.provider.getListProgram(undefined).then((it) => {
       return this.programRepository
         .clear()
-        .then((it2) => this.programRepository.save(it));
+        .then(() => this.programRepository.save(it));
     });
   }
 }

@@ -3,22 +3,26 @@ import * as bcrypt from "bcrypt";
 import { JwtService } from "@nestjs/jwt";
 import { AdminService } from "../admin.service";
 import { Cron, CronExpression } from "@nestjs/schedule";
+import { DbConfigService } from "../../db-config/db-config.service";
 
 @Injectable()
 export class AdminAuthService implements OnModuleInit {
   authKey: string;
+  adminPassword: string;
   private blacklist: string[] = [];
 
   constructor(
     private adminService: AdminService,
-    private jwtService: JwtService
+    private jwtService: JwtService,
+    private configService: DbConfigService
   ) {
   }
 
-  onModuleInit() {
+  async onModuleInit() {
     //this.authKey = randomStringGenerator();
     this.authKey = "af5bb535-1efc-4d23-ad53-9d84e7174f1f";
     console.log("KEY: " + this.authKey);
+    this.adminPassword = await this.configService.config("admin-password", "Zgrate123");
   }
 
   @Cron(CronExpression.EVERY_30_SECONDS)

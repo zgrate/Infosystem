@@ -1,5 +1,5 @@
 import { Column, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from "typeorm";
-import { ScreenEntity } from "../../shared/entities/definitions";
+import { ScreenEntity } from "../../shared/entities/screen.entity";
 
 @Entity()
 export class StreamModeEntity {

@@ -1,10 +1,12 @@
-import { BadRequestException, Body, Controller, Get, Post } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Get, Post, Query } from "@nestjs/common";
 import { Admin } from "../../admin/auth/admin-auth.decorators";
-import { ScreenEntity } from "../../shared/entities/definitions";
-import { ScreenService } from "../../screen-main/services/screen.service";
+import { ScreenEntity } from "../../shared/entities/screen.entity";
+import { ModeType, ScreenService } from "../../screen-main/services/screen.service";
 import { RegisterScreenDTO } from "../../admin/admin.entity";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 import { MODE_CHANGE_EVENT, ModeChangeEvent } from "../../screen-events/events/mode-change.event";
+import { SETTINGS_UPDATE_EVENT } from "../../screen-events/events/settings-update.event";
+import { MESSAGE_UPDATE_EVENT } from "../../screen-events/events/messages-update.event";
 
 @Controller("admin/screen")
 export class ScreenAdminController {
@@ -23,21 +25,45 @@ export class ScreenAdminController {
   @Post("register")
   @Admin()
   async registerScreen(@Body() registerScreen: RegisterScreenDTO) {
-    if (
-      registerScreen.screenId == undefined ||
-      registerScreen.authKey == undefined
-    ) {
+    if (registerScreen.authKey == undefined) {
       throw new BadRequestException("not supplied");
     }
-    if (
-      !(await this.screenService.authScreen(
-        registerScreen.screenId,
-        registerScreen.authKey
-      ))
-    ) {
+    if (!(await this.screenService.authScreen(registerScreen.authKey))) {
       throw new BadRequestException("screen registered or not found");
     }
     return { message: "ok" };
+  }
+
+  @Admin()
+  @Post("allmodes")
+  async setAllModes(@Query("mode") mode: ModeType) {
+    if (mode == undefined) {
+      throw new BadRequestException();
+    }
+    return this.screenService.setAllModes(mode).then((it) => {
+      return {
+        status: "ok",
+        success: it
+      };
+    });
+  }
+
+  @Admin()
+  @Post("settings")
+  async refreshSettingsInScreens() {
+    return {
+      status: "ok",
+      result: this.eventEmitter.emit(SETTINGS_UPDATE_EVENT)
+    };
+  }
+
+  @Admin()
+  @Post("messages")
+  async refreshMessages() {
+    return {
+      status: "ok",
+      result: this.eventEmitter.emit(MESSAGE_UPDATE_EVENT)
+    };
   }
 
   @Admin()

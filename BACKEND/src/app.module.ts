@@ -16,6 +16,7 @@ import { AccreditationModule } from "./accreditation/accreditation.module";
 import { TelegrafModule } from "nestjs-telegraf";
 import { CatchThemAllModule } from "./catch-them-all/base/catch-them-all.module";
 import { DbConfigModule } from "./db-config/db-config.module";
+import { MessagesModule } from "./messages/messages.module";
 
 @Module({
   imports: [
@@ -46,7 +47,8 @@ import { DbConfigModule } from "./db-config/db-config.module";
     ScreenWebSocketModule,
     ScreenModesModule,
     AccreditationModule,
-    CatchThemAllModule
+    CatchThemAllModule,
+    MessagesModule
   ],
   controllers: [AppController],
   providers: [AppService]

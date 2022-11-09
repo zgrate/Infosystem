@@ -8,6 +8,7 @@ import { JwtStrategy } from "./strategies/jwt.strategy";
 import { AdminService } from "../admin.service";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { AdminEntity } from "../admin.entity";
+import { DbConfigModule } from "../../db-config/db-config.module";
 
 @Module({
   imports: [
@@ -16,7 +17,8 @@ import { AdminEntity } from "../admin.entity";
     JwtModule.register({
       secret: process.env.JWT_SECRET_KEY,
       signOptions: { expiresIn: "1d" }
-    })
+    }),
+    DbConfigModule
   ],
   providers: [AdminAuthService, LocalStrategy, JwtStrategy, AdminService],
   controllers: [AdminAuthController],

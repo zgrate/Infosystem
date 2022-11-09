@@ -98,11 +98,15 @@ const CheckIn = (props: { checkIn: boolean }) => {
   }
 };
 
-const CheckForKeys = (props: { keysFree: boolean }) => {
-  if (props.keysFree) {
-    return <div style={{ backgroundColor: "green" }}>KLUCZ DO WYDANIA</div>;
+const CheckForKeys = (props: { acc: RegisteredAcc }) => {
+  if (props.acc && props.acc.roomNumber) {
+    if (props.acc.keysFree) {
+      return <div style={{ backgroundColor: "green" }}>KLUCZ DO WYDANIA</div>;
+    } else {
+      return <div style={{ backgroundColor: "red" }}>KLUCZ WYDANY</div>;
+    }
   } else {
-    return <div style={{ backgroundColor: "red" }}>KLUCZ WYDANY</div>;
+    return <></>;
   }
 };
 
@@ -150,7 +154,7 @@ export const ShowBadge = (props: { acc: RegisteredAcc, checkInKey: (id: number) 
         </div>
         <div style={{ margin: "30px" }}>
           <CheckIn checkIn={props.acc.checkIn} />
-          <CheckForKeys keysFree={props.acc.keysFree} />
+          <CheckForKeys acc={props.acc} />
           <TypeInfo acc={props.acc} />
           <div>
             {props.acc.id} - {props.acc.nickname}
@@ -286,7 +290,7 @@ export const AcreditionSystem = () => {
   }
 
   if (password && accounts.length != 0) {
-    return <div className="App" style={{ alignItems: "center", justifyContent: "center" }}>
+    return <div className="App">
       <div>
         <b style={{ fontSize: "5vh" }}>SYSTEM AKREDYTACJI FUTROŁAJKI 2022</b>
       </div>
@@ -311,7 +315,7 @@ export const AcreditionSystem = () => {
       </Box>
     </div>;
   } else {
-    return <div className="App" style={{ alignItems: "center", justifyContent: "center" }}>
+    return <div className="App">
       <input ref={passwordRef} type="password" height={"5vh"}
              style={{ height: "5vh", fontSize: "2vh", width: "40vw" }} />
       <button onClick={() => {
