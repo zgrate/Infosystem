@@ -6,8 +6,6 @@ export const TGUser = createParamDecorator(
   (data, ctx: ExecutionContext): User => {
     const user = ctx?.getArgs()[0]?.update?.user;
     const user2 = ctx?.getArgs()[0]?.update?.message?.from;
-    console.log(user);
-    console.log(user2);
     return user ? user : user2;
   }
 );

@@ -5,7 +5,6 @@ import { DbConfigPipe } from "../../db-config/db-config.pipe";
 import { User } from "typegram/manage";
 import { TGUser } from "../telegram.decorators";
 
-
 @Update()
 export class TelegramUpdate implements OnModuleInit {
   @Start()
@@ -20,11 +19,8 @@ export class TelegramUpdate implements OnModuleInit {
     );
   }
 
-
   @Command("premium")
   async premium(@Ctx() ctx: Context<any>, @TGUser() user: User) {
-    console.log("USER?");
-    console.log(user);
     if (user.is_premium) {
       await ctx.reply("Ta wiadomość jest dostępna dla ciebie!");
       await ctx.replyWithSticker(

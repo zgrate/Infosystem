@@ -1,22 +1,27 @@
-import { Injectable, OnModuleInit } from "@nestjs/common";
+import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { DbConfigEntity } from "./db-config.entity";
 import { Repository } from "typeorm";
 import { Cron, CronExpression } from "@nestjs/schedule";
-
+import { OnEvent } from "@nestjs/event-emitter";
 
 export type SettingsKeys =
-  "admin-group"
+  | "admin-group"
   | "photos-source"
   | "group-chats"
   | "admin-password"
   | "acc-password"
   | "main-stream-link"
   | "tg-admins"
+  | "org_chat"
+  | "security_chat"
+  | "chat-forward-timeout"
+  | "photos_chat";
 
 @Injectable()
 export class DbConfigService implements OnModuleInit {
   private configurationsTemp: DbConfigEntity[] = [];
+  private logger = new Logger(DbConfigService.name);
 
   constructor(
     @InjectRepository(DbConfigEntity)
@@ -26,13 +31,17 @@ export class DbConfigService implements OnModuleInit {
 
   @Cron(CronExpression.EVERY_5_MINUTES)
   async refreshCache() {
-    await this.catchRefresh();
+    await this.cacheRefresh();
   }
 
-  catchRefresh() {
+  @OnEvent("admin.settings.refresh")
+  cacheRefresh() {
+    this.logger.log("Refreshing settings....");
     return this.repository.find().then((items) => {
       this.configurationsTemp = items;
+      this.logger.debug("Loaded " + items.length);
     });
+
   }
 
   async config<T>(key: SettingsKeys, defaultValue: T = undefined): Promise<T> {
@@ -56,6 +65,5 @@ export class DbConfigService implements OnModuleInit {
 
   async onModuleInit() {
     await this.refreshCache();
-    console.log(this.configurationsTemp);
   }
 }
