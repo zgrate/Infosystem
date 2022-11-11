@@ -5,7 +5,7 @@ import { Like, Repository } from "typeorm";
 
 export interface RecentlyCaught {
   fursuitId: string;
-  chatNickname: string;
+  tgId: number;
   catchId: number;
 }
 
@@ -31,12 +31,10 @@ export class CatchThemAllService {
   }
 
   async uploadPhotoRecentlyCatched(
-    tg_user: string,
-    file_id: string
+    tgId: number,
+    fileId: string
   ): Promise<"not_catch" | "error" | "ok"> {
-    const recentCatch = this.lastCatches.find(
-      (it) => it.chatNickname == tg_user
-    );
+    const recentCatch = this.lastCatches.find((it) => it.tgId == tgId);
     if (recentCatch === undefined) {
       return "not_catch";
     } else {
@@ -46,7 +44,7 @@ export class CatchThemAllService {
       if (fursuitCatch == undefined) {
         return "not_catch";
       } else {
-        fursuitCatch.photos.push(file_id);
+        fursuitCatch.photos.push(fileId);
         return await this.catchesRepo.save(fursuitCatch).then((it) => {
           if (it === undefined) return "error";
           else {
@@ -69,19 +67,19 @@ export class CatchThemAllService {
     });
   }
 
-  switchCatch(fursuitIdName: string, tgUser: string) {
+  switchCatch(fursuitIdName: string, tgId: number) {
     return this.findFursuitByNameId(fursuitIdName).then((fursuit) => {
       if (fursuit === undefined) {
         return "fursuit_not_found";
       } else {
-        const catched = fursuit.catched.find((it) => it.tgUser == tgUser);
+        const catched = fursuit.catched.find((it) => it.tgId == tgId);
         if (catched === undefined) {
           return "didnt_catch";
         } else {
-          const c = this.lastCatches.find((it) => it.chatNickname == tgUser);
+          const c = this.lastCatches.find((it) => it.tgId == tgId);
           if (c === undefined) {
             const newEle = {
-              chatNickname: tgUser,
+              tgId: tgId,
               catchId: catched.catchId,
               fursuitId: fursuit.fursuitId
             };
@@ -96,11 +94,11 @@ export class CatchThemAllService {
     });
   }
 
-  getCaughtOfUser(tgUser: string) {
+  getCaughtOfUser(tgId: number) {
     return this.catchesRepo
       .find({
         where: {
-          tgUser: tgUser
+          tgId: tgId
         },
         relations: {
           fursuit: true
@@ -111,18 +109,19 @@ export class CatchThemAllService {
 
   catchFursuit(
     fursuitId: string,
-    tgUser: string
+    tgId: number
   ): Promise<"error" | "caught" | "db_error" | string> {
     return this.findFursuit(fursuitId, true).then((fursuit) => {
       if (fursuit == null) {
         return "error";
       } else {
-        if (fursuit.catched.some((it) => it.tgUser === tgUser)) {
+        if (fursuit.catched.some((it) => it.tgId === tgId)) {
           return "caught";
         } else {
           const catched = new CatchThemAllCatchEntity();
           catched.fursuit = fursuit;
-          catched.tgUser = tgUser;
+          catched.tgId = tgId;
+          catched.tgUsername = "todo";
           catched.photos = [];
           fursuit.catched.push(catched);
           return this.repository
@@ -134,9 +133,8 @@ export class CatchThemAllService {
               else {
                 this.lastCatches.push({
                   fursuitId: it.fursuitId,
-                  chatNickname: tgUser,
-                  catchId: it.catched.find((it) => it.tgUser == tgUser)
-                    ?.catchId
+                  tgId: tgId,
+                  catchId: it.catched.find((it) => it.tgId == tgId)?.catchId
                 });
                 return it.fursuitName;
               }

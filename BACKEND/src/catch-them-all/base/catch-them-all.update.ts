@@ -9,8 +9,6 @@ export class CatchThemAllUpdate {
 
   @On("document")
   async getDocument(@Ctx() ctx: Context<any>) {
-    console.log("WHAT");
-    console.log(ctx.chat);
     await ctx.reply(
       await this.catchTheAllService.uploadPhotoRecentlyCatched(
         ctx.chat.username,

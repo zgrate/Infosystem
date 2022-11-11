@@ -18,6 +18,15 @@ import { CatchThemAllModule } from "./catch-them-all/base/catch-them-all.module"
 import { DbConfigModule } from "./db-config/db-config.module";
 import { MessagesModule } from "./messages/messages.module";
 
+export const TGException = (ctx, next) => {
+  console.log(next);
+  try {
+    next();
+  } catch (e) {
+    console.log(e);
+  }
+};
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -35,7 +44,13 @@ import { MessagesModule } from "./messages/messages.module";
     }),
     DbConfigModule,
     TelegrafModule.forRoot({
-      token: "1326259022:AAFrb-ybMyN3jBP3nhKkq8PlRgNiN0acTqU"
+      token: process.env.BOT_TOKEN,
+      // middlewares: [TGException],
+      options: {
+        telegram: {
+          testEnv: process.env.BOT_TEST_ENV === "true"
+        }
+      }
     }),
     ScheduleModule.forRoot(),
     EventEmitterModule.forRoot(),

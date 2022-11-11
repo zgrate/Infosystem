@@ -15,7 +15,8 @@ export const socketIO = io(process.env.REACT_APP_API_URL!, {
   },
   reconnection: true,
   reconnectionAttempts: 999999,
-  transports: ["websocket"]
+  transports: ["websocket"],
+  autoConnect: false
 });
 
 const PING_INTERVAL = 3000;

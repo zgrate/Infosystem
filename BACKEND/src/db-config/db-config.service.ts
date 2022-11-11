@@ -5,7 +5,14 @@ import { Repository } from "typeorm";
 import { Cron, CronExpression } from "@nestjs/schedule";
 
 
-export type SettingsKeys = "photos-source" | "group-chats" | "admin-password" | "acc-password" | "main-stream-link"
+export type SettingsKeys =
+  "admin-group"
+  | "photos-source"
+  | "group-chats"
+  | "admin-password"
+  | "acc-password"
+  | "main-stream-link"
+  | "tg-admins"
 
 @Injectable()
 export class DbConfigService implements OnModuleInit {
@@ -28,7 +35,7 @@ export class DbConfigService implements OnModuleInit {
     });
   }
 
-  async config(key: SettingsKeys, defaultValue: any = "") {
+  async config<T>(key: SettingsKeys, defaultValue: T = undefined): Promise<T> {
     const a = this.configurationsTemp.find((it) => it.key == key);
     if (a !== undefined) {
       return a.value;

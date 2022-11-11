@@ -1,30 +1,41 @@
-import { Ctx, Start, Update } from "nestjs-telegraf";
-import { CanActivate, ExecutionContext, OnModuleInit, Param, UseGuards } from "@nestjs/common";
+import { Command, Ctx, Start, Update } from "nestjs-telegraf";
+import { OnModuleInit, Param } from "@nestjs/common";
 import { Context } from "telegraf";
-import { Observable } from "rxjs";
 import { DbConfigPipe } from "../../db-config/db-config.pipe";
+import { User } from "typegram/manage";
+import { TGUser } from "../telegram.decorators";
 
-export class TestGuard implements CanActivate {
-  canActivate(
-    context: ExecutionContext
-  ): boolean | Promise<boolean> | Observable<boolean> {
-    console.log("awooga");
-    console.log(context.getArgs());
-    return true;
-  }
-}
 
 @Update()
 export class TelegramUpdate implements OnModuleInit {
   @Start()
-  @UseGuards(TestGuard)
   async test(
     @Ctx() ctx: Context<any>,
     @Param("test", DbConfigPipe) config: any
   ) {
-    console.log(config);
     // console.log(ctx.chat.type);
-    await ctx.reply("TEST");
+
+    await ctx.reply(
+      "Cześć! Jestem Renia! Jestem botem Futrołajek! Co chcesz zrobić?"
+    );
+  }
+
+
+  @Command("premium")
+  async premium(@Ctx() ctx: Context<any>, @TGUser() user: User) {
+    console.log("USER?");
+    console.log(user);
+    if (user.is_premium) {
+      await ctx.reply("Ta wiadomość jest dostępna dla ciebie!");
+      await ctx.replyWithSticker(
+        "CAACAgEAAxkBAAEZ2Ddjbkmb7cGYXxrYljABzBMcmZ_BbgACegEAAmHY8QiTp8mpHbnMDysE"
+      );
+    } else {
+      await ctx.reply(
+        "[ ta wiadomość jest dostępna tylko dla użytkowników telegram premium. ]"
+      );
+    }
+    // if(ctx.messages.from)
   }
 
   onModuleInit(): any {

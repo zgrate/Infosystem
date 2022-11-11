@@ -9,6 +9,9 @@ export class AuthorisedTgUserEntity {
   @Column({ nullable: true })
   tgUsername: string;
 
+  @Column("bigint")
+  tgId: string;
+
   @Column()
   authCode: string;
 

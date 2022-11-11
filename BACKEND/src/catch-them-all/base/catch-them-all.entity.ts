@@ -25,8 +25,11 @@ export class CatchThemAllCatchEntity {
   @ManyToOne(() => CatchThemAllEntity)
   fursuit: CatchThemAllEntity;
 
-  @Column()
-  tgUser: string;
+  @Column("bigint")
+  tgId: number;
+
+  @Column({ nullable: true })
+  tgUsername: string;
 
   @Column("simple-array")
   photos: string[];
