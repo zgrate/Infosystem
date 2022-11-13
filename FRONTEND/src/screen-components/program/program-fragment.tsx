@@ -28,45 +28,110 @@ const GenerateTable = (props: { program: ProgramEntity[], fullWidth: boolean }) 
   </Container>;
 };
 
-const MainTableRow = (props: { program: ProgramEntity }) => {
+
+const MainTableRow = (props: { program: ProgramEntity, myRoom: string }) => {
   console.log(props.program);
-  return <Row className={"MainStyle"}>
-    <Col xs={2} className={"MainStyleCol"}>
-      {FormatDate(props.program.eventStartTime.toString())}
-    </Col>
-    <Col className={"MainStyleCol"}>
-      {props.program.translations[0].title}
-    </Col>
-  </Row>;
+  const getRoomChange = () => {
+    if (props.program.eventChangedRoom) {
+      if (props.program.eventChangedRoom === props.myRoom) {
+        return "TERAZ W TEJ SALI!";
+      } else {
+        return "TERAZ W " + capitalizeFirstLetter(props.program.eventScheduledLocation);
+      }
+    } else {
+      return "";
+    }
+  };
+  if (props.program.eventState === "cancelled") {
+    return <Row className={"MainStyle"}>
+      <Col xs={2} className={"MainStyleCol"}>
+        <span className={"Cancelled"}>{FormatDate(props.program.eventStartTime.toString())}</span>
+      </Col>
+      <Col className={"MainStyleCol"}>
+        <span className={"Cancelled"}>{props.program.translations[0].title}</span> ODWOŁANO!
+      </Col>
+    </Row>;
+  } else if (props.program.eventState === "moved") {
+    return <Row className={"MainStyle"}>
+      <Col xs={2} className={"MainStyleCol"}>
+        <span
+          className={"Moved"}>{FormatDate(props.program.eventStartTime.toString())}</span> {!!props.program.changeStartTime ? FormatDate(props.program.changeStartTime.toString()) : ""}
+      </Col>
+      <Col className={"MainStyleCol"}>
+        <span
+          className={"Moved"}>{props.program.translations[0].title}</span><span><strong>ZMIANA!{getRoomChange()}</strong></span>
+      </Col>
+    </Row>;
+  } else {
+    return <Row className={"MainStyle"}>
+      <Col xs={2} className={"MainStyleCol"}>
+        {FormatDate(props.program.eventStartTime.toString())}
+      </Col>
+      <Col className={"MainStyleCol"}>
+        {props.program.translations[0].title}
+      </Col>
+    </Row>;
+  }
 };
 
 const TableRow = (props: { program: ProgramEntity }) => {
-  console.log(props.program);
-  return <Row className={"TableRow"}>
-    <Col xs={2} className={"content"}>
-      {FormatDate(props.program.eventStartTime.toString())}
-    </Col>
-    <Col className={"content"}>
-      {props.program.translations[0].title}
-    </Col>
-    <Col xs={3} className={"content"}>
-      {props.program.eventScheduledLocation}
-    </Col>
-  </Row>;
+
+  if (props.program.eventState === "moved") {
+    return <Row className={"TableRow"}>
+      <Col xs={2} className={"content"}>
+        <span
+          className={"Moved"}>{!!props.program.changeStartTime ? FormatDate(props.program.changeStartTime.toString()) : FormatDate(props.program.eventStartTime.toString())}</span>
+      </Col>
+      <Col className={"content"}>
+        <span className={"Moved"}>{props.program.translations[0].title}</span>
+      </Col>
+      <Col xs={3} className={"content"}>
+        <span
+          className={"Moved"}>{!!props.program.eventChangedRoom ? props.program.eventChangedRoom : props.program.eventScheduledLocation}</span>
+      </Col>
+    </Row>;
+  } else if (props.program.eventState === "cancelled") {
+    return <Row className={"TableRow"}>
+      <Col xs={2} className={"content"}>
+        <span className={"Cancelled"}>{FormatDate(props.program.eventStartTime.toString())}</span>
+      </Col>
+      <Col className={"content"}>
+        <span className={"Cancelled"}>{props.program.translations[0].title}</span>
+      </Col>
+      <Col xs={3} className={"content"}>
+        <span className={"Cancelled"}>{props.program.eventScheduledLocation}</span>
+      </Col>
+    </Row>;
+  } else {
+
+    return <Row className={"TableRow"}>
+      <Col xs={2} className={"content"}>
+        {FormatDate(props.program.eventStartTime.toString())}
+      </Col>
+      <Col className={"content"}>
+        {props.program.translations[0].title}
+      </Col>
+      <Col xs={3} className={"content"}>
+        {capitalizeFirstLetter(props.program.eventScheduledLocation)}
+      </Col>
+    </Row>;
+
+  }
 };
 
 function capitalizeFirstLetter(s: string) {
-  return s.charAt(0).toUpperCase() + s.slice(1);
+  return (s?.charAt(0)?.toUpperCase() + s?.slice(1))?.replace("_", " ");
 }
 
-const GenerateMainRoomTable = (props: { program: ProgramEntity[] }) => {
+const GenerateMainRoomTable = (props: { program: ProgramEntity[], myRoom: string }) => {
   return (
     <Container>
       <Row className={"MainRoomStyleHeader"}>
         <Col xs={2} className={"header column"}>Godzina</Col>
         <Col className={"header column"}>Nazwa punktu</Col>
       </Row>
-      {props.program.length !== 0 ? props.program.map(it => <MainTableRow program={it} />) : <EmptyRow />}
+      {props.program.length !== 0 ? props.program.map(it => <MainTableRow program={it} myRoom={props.myRoom} />) :
+        <EmptyRow />}
     </Container>
   );
 };
@@ -90,13 +155,10 @@ export const ProgramFragment = (props: { screen: ScreenEntity, socketIO: Socket 
     const repeating = setInterval(() => {
       setForceRefresh(true);
     }, 300000);
-    return () => {
-      props.socketIO.off(PROGRAM_UPDATE_EVENT);
-      clearInterval(repeating);
-    };
-  });
-  if (program === undefined || forceRefresh) {
-    if (!loading) {
+    if (program === undefined && !loading) {
+      setForceRefresh(true);
+    }
+    if (forceRefresh) {
       axiosService.get("program/screen").then(it => {
         if (it.data) {
           setProgram(it.data["program"]);
@@ -106,11 +168,17 @@ export const ProgramFragment = (props: { screen: ScreenEntity, socketIO: Socket 
       setLoading(true);
       setForceRefresh(false);
     }
+    return () => {
+      props.socketIO.off(PROGRAM_UPDATE_EVENT);
+      clearInterval(repeating);
+    };
+  }, [forceRefresh, loading, program, props.socketIO]);
+  if (program === undefined || forceRefresh) {
     return <div> Ładowanie programu... </div>;
   } else {
-    // console.log(program);
-    // console.log(props.screen)
-    if (props.screen.preferredRoom !== undefined) {
+    console.log(program);
+    console.log(props.screen);
+    if (props.screen.preferredRoom != undefined) {
       return <div style={{ display: "flex", flexDirection: "row", justifyContent: "space-between", margin: 10 }}>
         <div style={{ width: "60%", margin: 5 }}>
           <div style={{
@@ -120,7 +188,8 @@ export const ProgramFragment = (props: { screen: ScreenEntity, socketIO: Socket 
             backgroundColor: "cyan"
           }}>{capitalizeFirstLetter(props.screen.preferredRoom)}</div>
           <GenerateMainRoomTable
-            program={program.filter(it => it.eventScheduledLocation === props.screen.preferredRoom).slice(0, props.screen.maxMainRoomEntry)} />
+            program={program.filter(it => it.eventScheduledLocation === props.screen.preferredRoom || (it.eventState === "moved" && it.eventChangedRoom === props.screen.preferredRoom)).slice(0, props.screen.maxMainRoomEntry)}
+            myRoom={props.screen.preferredRoom} />
         </div>
         <div style={{ width: "40%", margin: 5 }}>
           <div
@@ -133,9 +202,9 @@ export const ProgramFragment = (props: { screen: ScreenEntity, socketIO: Socket 
         </div>
       </div>;
     }
-    return <>
+    return <div style={{ marginBottom: "10px" }}>
       <GenerateTable program={program} fullWidth={true} />
-    </>;
+    </div>;
   }
 
 };

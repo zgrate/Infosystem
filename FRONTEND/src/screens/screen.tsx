@@ -7,6 +7,7 @@ import { AdminMessageEntity, DisplayModeType, PeopleMessageEntity, ScreenEntity 
 import { axiosService } from "../services/AxiosService";
 import { ProgramFragment } from "../screen-components/program/program-fragment";
 import { SlideshowFragment } from "../screen-components/program/slideshow.fragment";
+import { StreamFragment } from "../screen-components/stream-fragment";
 
 const message_org = ["Witamy na Futrołajkach 2022!", "Przypominamy, że możesz zgłosić swój punkt programu na @futrolajkibot!", "Przypominamy, że pokój 111 ma zakaz robienia dziur w ścianiach", "Przypominamy, że Z-Grate ma zakaz walenia balonów. Wszystkie nadużycia prosimy zgłaszać na @futrolajki bot lub telefonicznie"];
 
@@ -35,13 +36,12 @@ export interface MessagesWrapper {
 
 export const DisplayFragment = (props: { mode: string, screen: ScreenEntity, socketIO: Socket }) => {
 
-
   if (props.mode === "info") {
     return <ProgramFragment screen={props.screen} socketIO={props.socketIO} />;
-  }
-  if (props.mode === "slideshow") {
+  } else if (props.mode === "slideshow") {
     return <SlideshowFragment socketIO={props.socketIO} />;
   }
+
   return <></>;
 };
 
@@ -56,8 +56,10 @@ export const ScreenMain = () => {
   const [peopleMessageIndex, setPeopleMessageIndex] = useState(0);
 
   const executeUpdate = () => {
-    axiosService.get("/screen/info/" + localStorage.getItem("screenId")).then(it => {
-      if (it.status === 404) {
+
+    return axiosService.get("/screen/info/" + localStorage.getItem("screenId"), { validateStatus: (status) => status < 500 }).then(it => {
+      if (it.status > 400) {
+        console.log("TEST");
         localStorage.removeItem("screenId");
       } else {
         setScreenSettings(it.data);
@@ -65,9 +67,22 @@ export const ScreenMain = () => {
         lastUpdate = Date.now();
       }
       setLoading(false);
-    }).catch(it => {
-      setMode("connection_error");
-      setLoading(false);
+    }).catch(error => {
+      // console.log(error.toJSON())
+      if (error.response) {
+        if (error.response.status === 403) {
+          console.log("THSI IS UNAUTH!");
+        }
+      }
+      return setTimeout(() => {
+        // setMode("connection_error");
+        // setLoading(false);
+        console.log(it);
+        if (error.status === 403) {
+          localStorage.removeItem("screenId");
+        }
+      }, 1000);
+
     });
 
     setLoading(true);
@@ -139,7 +154,7 @@ export const ScreenMain = () => {
       socketIO.off("screen.settings.update");
       socketIO.off("screen.messages.update");
     };
-  }, [socketIO, setMode, executeUpdate, lastPong, lastMessageChange, setForceMessageReload]);
+  }, [setMode, executeUpdate, setForceMessageReload, screenSettings, messages?.peopleMessages, peopleMessageIndex]);
 
   if (!localStorage.getItem("screenId")) {
     return <Navigate replace to={"/auth"} />;
@@ -211,6 +226,12 @@ export const ScreenMain = () => {
     return <div className={"App"}>
       Problem z połączeniem, proszę czekać....
     </div>;
+  } else if (mode === "stream") {
+    return <div className="App">
+      <StreamFragment screen={screenSettings!!} socketIO={socketIO} />
+      <div style={{ fontSize: "15px" }}>{screenSettings?.name} Last
+        update {new Date(lastMessageChange).toString()}</div>
+    </div>;
   } else {
     return <div className="App">
       <ShowMessage message={messages?.peopleMessages?.[peopleMessageIndex]} />
@@ -220,7 +241,8 @@ export const ScreenMain = () => {
       <div className="Footer">
         {getMarqueeOrg(messages?.adminMessages)}
       </div>
-      <div style={{ fontSize: "15px" }}>Last update {new Date(lastMessageChange).toString()}</div>
+      <div style={{ fontSize: "15px" }}>{screenSettings?.name} Last
+        update {new Date(lastMessageChange).toString()}</div>
     </div>;
   }
 }

@@ -99,7 +99,8 @@ export class ScreenService implements OnModuleInit {
           new ModeChangeEvent(value.id, newMode)
         );
       });
-      return true;
+
+      return this.screenDB.save(value).then(() => true);
     });
   }
 

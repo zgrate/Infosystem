@@ -12,6 +12,16 @@
     border: 1px solid
 }
 
+.Cancelled {
+    color: red;
+    text-decoration: line-through;
+}
+
+.Moved {
+    color: lightcoral;
+
+}
+
 .MainRoomStyleHeader > .header {
     font-size: 25px;
     font-weight: bold;

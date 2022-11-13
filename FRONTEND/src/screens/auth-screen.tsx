@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 // import { socketIO } from "../services/socketio.service";
 import { axiosService } from "../services/AxiosService";
 
@@ -14,11 +14,47 @@ export const AuthScreen = () => {
   //   })
   // })
 
-  const [screenData, setScreenData] = useState(null);
+  const [screenData, setScreenData] = useState(undefined);
   const [refresh, setRefresh] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const screenRequest = () => {
+
+
+  };
+
+  useEffect(() => {
+    let ignore = false;
+    if (localStorage.getItem("screenId") && screenData === undefined && !loading) {
+      axiosService.get("/screen/get/" + localStorage.getItem("screenId"), { validateStatus: (status) => status < 500 }).then(res => {
+        if (res.status >= 400) {
+          localStorage.removeItem("screenId");
+          setRefresh(!refresh);
+        } else {
+          setScreenData(res.data);
+        }
+        setLoading(false);
+      }).catch(it => {
+        localStorage.removeItem("screenId");
+        setRefresh(!refresh);
+        setLoading(false);
+      });
+      setLoading(true);
+    } else if (!localStorage.getItem("screenId") && !loading) {
+      axiosService.post("/screen").then((it) => {
+        console.log(it);
+        localStorage.setItem("screenId", it.data["id"]);
+        setScreenData(it.data);
+        setLoading(false);
+      });
+      setLoading(true);
+
+    }
+
+  }, [loading, screenData, refresh]);
 
   if (localStorage.getItem("screenId")) {
-    if (screenData != null) {
+    if (screenData != undefined) {
       if (screenData["isRegistered"]) {
         return <div className={"App"}>
           Ekran jest już zautoryzowany! Zapraszamy na stronę
@@ -30,14 +66,6 @@ export const AuthScreen = () => {
         </div>;
       }
     } else {
-      axiosService.get("/screen/get/" + localStorage.getItem("screenId")).then(res => {
-        if (res.status === 404) {
-          localStorage.removeItem("screenId");
-          setRefresh(!refresh);
-        } else {
-          setScreenData(res.data);
-        }
-      });
       return <div className={"App"}>
         Loading...
       </div>;
@@ -45,11 +73,6 @@ export const AuthScreen = () => {
 
   } else {
     if (screenData == null) {
-      axiosService.post("/screen").then((it) => {
-        console.log(it);
-        localStorage.setItem("screenId", it.data["id"]);
-        setScreenData(it.data);
-      });
       return <div className={"App"}>
         Autoryzacja z {process.env.REACT_APP_API_URL}
       </div>;
