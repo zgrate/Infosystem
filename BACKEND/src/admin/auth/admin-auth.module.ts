@@ -22,7 +22,7 @@ import { DbConfigModule } from "../../db-config/db-config.module";
   ],
   providers: [AdminAuthService, LocalStrategy, JwtStrategy, AdminService],
   controllers: [AdminAuthController],
-  exports: [AdminAuthService]
+  exports: [AdminAuthService, AdminService]
 })
 export class AdminAuthModule {
 }

@@ -21,8 +21,12 @@ export class ScreenService implements OnModuleInit {
     return this.screenDB.find();
   }
 
-  getScreenByID(id: string): Promise<ScreenEntity> {
-    return this.screenDB.findOneBy({ id: id });
+  async getScreenByID(id: string): Promise<ScreenEntity> {
+    if (id) {
+      return this.screenDB.findOneBy({ id: id });
+    } else {
+      return undefined;
+    }
   }
 
   getScreenByKey(key: string): Promise<ScreenEntity> {

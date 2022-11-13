@@ -1,11 +1,12 @@
 import { ShowMessage } from "../screen-components/public-messages";
-import { StreamView } from "../views/stream";
 import { getMarqueeOrg } from "../screen-components/marquee-generator";
 import React, { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
-import io from "socket.io-client";
+import io, { Socket } from "socket.io-client";
 import { AdminMessageEntity, DisplayModeType, PeopleMessageEntity, ScreenEntity } from "../screen-admin/screen.entity";
 import { axiosService } from "../services/AxiosService";
+import { ProgramFragment } from "../screen-components/program/program-fragment";
+import { SlideshowFragment } from "../screen-components/program/slideshow.fragment";
 
 const message_org = ["Witamy na Futrołajkach 2022!", "Przypominamy, że możesz zgłosić swój punkt programu na @futrolajkibot!", "Przypominamy, że pokój 111 ma zakaz robienia dziur w ścianiach", "Przypominamy, że Z-Grate ma zakaz walenia balonów. Wszystkie nadużycia prosimy zgłaszać na @futrolajki bot lub telefonicznie"];
 
@@ -24,15 +25,28 @@ const CONNECTION_TIMEOUT = 5000;
 let disconnectTimes = 0;
 let lastPong = Date.now();
 let lastMessageChange = Date.now();
+let lastUpdate = Date.now();
 
 export interface MessagesWrapper {
   peopleMessages: PeopleMessageEntity[] | undefined;
   adminMessages: AdminMessageEntity[] | undefined;
 }
 
+
+export const DisplayFragment = (props: { mode: string, screen: ScreenEntity, socketIO: Socket }) => {
+
+
+  if (props.mode === "info") {
+    return <ProgramFragment screen={props.screen} socketIO={props.socketIO} />;
+  }
+  if (props.mode === "slideshow") {
+    return <SlideshowFragment socketIO={props.socketIO} />;
+  }
+  return <></>;
+};
+
 export const ScreenMain = () => {
 
-  const [connected, isConnected] = useState(false);
   const [screenSettings, setScreenSettings] = useState<ScreenEntity>();
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<DisplayModeType>("connecting");
@@ -41,9 +55,6 @@ export const ScreenMain = () => {
   const [forceMessageReload, setForceMessageReload] = useState(false);
   const [peopleMessageIndex, setPeopleMessageIndex] = useState(0);
 
-
-  // const [testMsg, setTestMsg] = useState<MessageType>({ message: "", iconUrl: "" });
-
   const executeUpdate = () => {
     axiosService.get("/screen/info/" + localStorage.getItem("screenId")).then(it => {
       if (it.status === 404) {
@@ -51,6 +62,7 @@ export const ScreenMain = () => {
       } else {
         setScreenSettings(it.data);
         setMode(it.data.currentDisplayMode!);
+        lastUpdate = Date.now();
       }
       setLoading(false);
     }).catch(it => {
@@ -137,6 +149,7 @@ export const ScreenMain = () => {
       executeUpdate();
     }
   }
+  // console.log(screenSettings)
   if (!messagesLoading && screenSettings != null) {
     if (forceMessageReload || (screenSettings?.peopleMessages && screenSettings?.adminMessages && messages === undefined)) {
       axiosService.get("messages").then((res) => {
@@ -149,6 +162,7 @@ export const ScreenMain = () => {
         }
         setMessages({ adminMessages: admins, peopleMessages: peoples });
         setMessageLoading(false);
+        lastUpdate = Date.now();
       }).catch(it => {
         console.log("Trying again  soon...");
         setTimeout(() => setMessageLoading(false), CONNECTION_TIMEOUT);
@@ -160,6 +174,7 @@ export const ScreenMain = () => {
         const peoples: PeopleMessageEntity[] = res.data;
         setMessages({ peopleMessages: peoples, adminMessages: undefined });
         setMessageLoading(false);
+        lastUpdate = Date.now();
       }).catch(it => {
         console.log("Trying again  soon...");
         setTimeout(() => setMessageLoading(false), CONNECTION_TIMEOUT);
@@ -173,7 +188,7 @@ export const ScreenMain = () => {
 
         setMessageLoading(false);
         setForceMessageReload(false);
-
+        lastUpdate = Date.now();
       }).catch(it => {
         console.log("Trying again  soon...");
         setTimeout(() => setMessageLoading(false), CONNECTION_TIMEOUT);
@@ -183,6 +198,7 @@ export const ScreenMain = () => {
   }
 
   console.log(mode);
+
 
   if (mode === "connecting") {
     return <div className={"App"}>
@@ -195,25 +211,16 @@ export const ScreenMain = () => {
     return <div className={"App"}>
       Problem z połączeniem, proszę czekać....
     </div>;
-  } else if (mode === "info") {
+  } else {
     return <div className="App">
       <ShowMessage message={messages?.peopleMessages?.[peopleMessageIndex]} />
+      <DisplayFragment mode={mode} screen={screenSettings!!} socketIO={socketIO} />
       {/*<AllScheduleView rows={rows}/>*/}
       {/*<StreamView streamLink={"https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8"} playerStyle={{}} />*/}
       <div className="Footer">
         {getMarqueeOrg(messages?.adminMessages)}
       </div>
-
+      <div style={{ fontSize: "15px" }}>Last update {new Date(lastMessageChange).toString()}</div>
     </div>;
   }
-
-  return <div className="App">
-    <ShowMessage message={messages?.peopleMessages?.[peopleMessageIndex]} />
-    {/*<AllScheduleView rows={rows}/>*/}
-    <StreamView streamLink={"https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8"} playerStyle={{}} />
-    <div className="Footer">
-      {getMarqueeOrg(messages?.adminMessages)}
-    </div>
-
-  </div>;
 }

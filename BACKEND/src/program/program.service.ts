@@ -1,11 +1,18 @@
 import { Injectable } from "@nestjs/common";
 import { ProgramIntegrationInterface } from "./integrations/program-integration.interface";
 import { InjectRepository } from "@nestjs/typeorm";
-import { NEW_EVENT_REGISTERED, PROGRAM_ACCEPTED_EVENT, ProgramEntity } from "./entities/program.entity";
+import {
+  NEW_EVENT_REGISTERED,
+  PROGRAM_ACCEPTED_EVENT,
+  PROGRAM_UPDATE_EVENT,
+  ProgramEntity
+} from "./entities/program.entity";
 import { In, MoreThanOrEqual, Not, Repository } from "typeorm";
 import { ProgramFormDTO } from "./telegram/program-form.dto";
 import { randomStringGenerator } from "@nestjs/common/utils/random-string-generator.util";
-import { EventEmitter2 } from "@nestjs/event-emitter";
+import { EventEmitter2, OnEvent } from "@nestjs/event-emitter";
+import { ProgramDescriptionEntity } from "./entities/program-description.entity";
+import { ScreenEntity } from "../shared/entities/screen.entity";
 
 function addMinutes(date, minutes) {
   return new Date(date.getTime() + minutes * 60000);
@@ -19,6 +26,8 @@ export class ProgramService {
     private provider: ProgramIntegrationInterface,
     @InjectRepository(ProgramEntity)
     private programRepository: Repository<ProgramEntity>,
+    @InjectRepository(ProgramDescriptionEntity)
+    private programDescRepository: Repository<ProgramDescriptionEntity>,
     private eventEmitter: EventEmitter2
   ) {
   }
@@ -31,25 +40,71 @@ export class ProgramService {
     });
   }
 
-  async getCurrentProgram(limit: number): Promise<ProgramEntity[]> {
+  async getProgramForScreens(screen: ScreenEntity) {
+    // console.log(screen);
     return this.programRepository.find({
-      where: {
-        eventState: In(["scheduled", "moved", "cancelled"]),
-        eventType: Not(In(["private_duration", "private_no_duration"])),
-        eventStartTime: MoreThanOrEqual(new Date())
-      },
-      order: {
-        eventStartTime: "ASC"
-      },
+      take: screen.maxMainRoomEntry + screen.maxOtherRoomEntry,
       relations: {
         translations: true
       },
-      take: limit
+      where: [
+        {
+          eventState: In(["scheduled"]),
+          eventType: Not(In(["private_duration", "private_no_duration"])),
+          eventStartTime: MoreThanOrEqual(this.currentDate())
+        },
+        {
+          eventState: In(["moved", "cancelled"]),
+          eventType: Not(In(["private_duration", "private_no_duration"]))
+        }
+      ]
     });
   }
 
+  async getCurrentProgram(limit: number): Promise<ProgramEntity[]> {
+    return this.programRepository
+      .find({
+        where: [
+          {
+            eventState: In(["scheduled"]),
+            eventType: Not(In(["private_duration", "private_no_duration"])),
+            eventStartTime: MoreThanOrEqual(this.currentDate())
+          },
+          {
+            eventState: In(["moved", "cancelled"]),
+            eventType: Not(In(["private_duration", "private_no_duration"]))
+          }
+        ],
+        order: {
+          eventStartTime: "ASC"
+        },
+        relations: {
+          translations: true
+        },
+        take: limit
+      })
+      .then((it) =>
+        it.filter(
+          (entity) => true
+          // new Date(entity.eventStartTime).getDate() == new Date().getDate(),
+        )
+      );
+  }
+
+  currentDate = () => {
+    //MOCKUP
+    return new Date();
+  };
+
   async addProgram(dto: ProgramFormDTO) {
     const start = new Date(dto.startDate);
+    const desc = {
+      lang: "pl",
+      description: dto.description,
+      title: dto.name,
+      id: undefined,
+      program: undefined
+    };
     const programEntity: ProgramEntity = {
       externalId: randomStringGenerator(),
       eventStartTime: new Date(dto.startDate),
@@ -64,26 +119,25 @@ export class ProgramService {
       eventType: "public_duration",
       internalId: undefined,
       eventState: "not_accepted",
-      translations: [
-        {
-          lang: "pl",
-          description: dto.description,
-          title: dto.name,
-          id: undefined,
-          program: undefined
-        }
-      ]
+      translations: []
     };
     const prog = await this.programRepository
       .save(programEntity, { reload: true })
-      .then((it) => {
-        return !!it;
+      .then(async (it) => {
+        desc.program = it;
+        return (
+          (await this.programDescRepository
+            .save(desc, { reload: true })
+            .then((it) => !!it)) && !!it
+        );
       })
       .catch((error) => {
         console.log(error);
         return false;
       });
+
     if (prog) {
+      programEntity.translations = [desc];
       this.eventEmitter.emit(NEW_EVENT_REGISTERED, programEntity);
       this.lastProgramID = programEntity.internalId;
     }
@@ -122,6 +176,11 @@ export class ProgramService {
       });
   }
 
+  @OnEvent(PROGRAM_ACCEPTED_EVENT)
+  programAcceptEvent() {
+    this.eventEmitter.emit(PROGRAM_UPDATE_EVENT);
+  }
+
   async denyEvent(eventId: number) {
     if (!eventId) {
       if (this.lastProgramID) {
@@ -154,8 +213,7 @@ export class ProgramService {
     return this.programRepository.find({
       where: {
         eventState: In(["not_accepted"]),
-        eventType: Not(In(["private_duration", "private_no_duration"])),
-        eventStartTime: MoreThanOrEqual(new Date())
+        eventType: Not(In(["private_duration", "private_no_duration"]))
       },
       order: {
         eventStartTime: "ASC"

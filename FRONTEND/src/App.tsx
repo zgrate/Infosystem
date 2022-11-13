@@ -7,6 +7,7 @@ import { DJView } from "./dj/dj";
 import { HelloWorld } from "./hello-world";
 import { AuthScreen } from "./screens/auth-screen";
 import { AdminPanel } from "./screen-admin/admin-panel";
+import "bootstrap/dist/css/bootstrap.min.css";
 
 export interface ProgramEntry {
   startTime: string;

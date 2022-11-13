@@ -13,6 +13,7 @@ import { Logger, UnauthorizedException } from "@nestjs/common";
 import { ScreenEntity } from "../../shared/entities/screen.entity";
 import { SETTINGS_UPDATE_EVENT } from "../../screen-events/events/settings-update.event";
 import { MESSAGE_UPDATE_EVENT } from "../../screen-events/events/messages-update.event";
+import { PROGRAM_UPDATE_EVENT } from "../../program/entities/program.entity";
 
 export class ConnectedClient {
   socketId: string;
@@ -57,13 +58,14 @@ export class ScreenWsGateway
   @OnEvent(MESSAGE_UPDATE_EVENT)
   onMessageUpdateEvent() {
     this.logger.debug("Emmiting messages update!");
-    this.clients.forEach(x => x.socket.emit(MESSAGE_UPDATE_EVENT));
-
+    this.clients.forEach((x) => x.socket.emit(MESSAGE_UPDATE_EVENT));
   }
 
   @OnEvent(MODE_CHANGE_EVENT)
   onModeChange(modeChange: ModeChangeEvent) {
-    this.logger.debug("Emmimting event! " + modeChange.screenId + " " + modeChange.newMode);
+    this.logger.debug(
+      "Emmimting event! " + modeChange.screenId + " " + modeChange.newMode
+    );
     const c = this.clients.find(
       (conn) => conn.screen.id == modeChange.screenId
     );
@@ -76,7 +78,13 @@ export class ScreenWsGateway
   @OnEvent(SETTINGS_UPDATE_EVENT)
   onSettingsUpdate() {
     this.logger.debug("Emmiting settings update!");
-    this.clients.forEach(x => x.socket.emit(SETTINGS_UPDATE_EVENT));
+    this.clients.forEach((x) => x.socket.emit(SETTINGS_UPDATE_EVENT));
+  }
+
+  @OnEvent(PROGRAM_UPDATE_EVENT)
+  onProgramUpdate() {
+    this.logger.debug("Emmiting program update!");
+    this.clients.forEach((x) => x.socket.emit(PROGRAM_UPDATE_EVENT));
   }
 
   async handleConnection(client: Socket, ...args: any[]): Promise<any> {
@@ -89,9 +97,7 @@ export class ScreenWsGateway
         client.disconnect();
         return new UnauthorizedException();
       } else {
-        const c = this.clients.find(
-          (conn) => conn.screen.id == screen.id
-        );
+        const c = this.clients.find((conn) => conn.screen.id == screen.id);
         if (c !== undefined) {
           this.logger.debug("Killing old screen connection!");
           c.socket.disconnect();
@@ -112,7 +118,6 @@ export class ScreenWsGateway
       const screen = this.clients.splice(conn, 1)[0];
       this.screenService.disconnect(screen.screen.id);
       this.logger.debug("Screen " + screen.screen.name + " disconnected!");
-
     }
   }
 }

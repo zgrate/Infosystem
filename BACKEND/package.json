@@ -34,6 +34,7 @@
     "@nestjs/typeorm": "^9.0.1",
     "@nestjs/websockets": "^9.1.4",
     "bcrypt": "^5.0.1",
+    "nest-sftp": "^1.1.8",
     "nestjs-telegraf": "^2.6.2",
     "passport": "^0.6.0",
     "passport-jwt": "^4.0.0",

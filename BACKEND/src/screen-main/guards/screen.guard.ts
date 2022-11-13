@@ -11,9 +11,14 @@ export class RegisteredScreenGuard implements CanActivate {
     context: ExecutionContext
   ): boolean | Promise<boolean> | Observable<boolean> {
     const request = context.switchToHttp().getRequest();
-    const id = request.params.id;
+    let id = request.params.id;
+    if (!id) id = request.headers["authorization"]?.replace("Bearer ", "");
+    // console.log(id);
     return this.screenService.getScreenByID(id).then((it) => {
-      if (it !== null) {
+      if (it) {
+        if (it.isRegistered) {
+          request.screen = it;
+        }
         return it.isRegistered;
       } else {
         return false;

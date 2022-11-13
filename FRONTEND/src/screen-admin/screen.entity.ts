@@ -14,7 +14,8 @@ export interface ScreenEntity {
   peopleMessages: boolean;
   adminMessages: boolean;
   peopleMessageRotate: number;
-
+  maxMainRoomEntry: number;
+  maxOtherRoomEntry: number;
 }
 
 export type DisplayModeType = "connection_error" | "connecting" | "program" | "info" | "stream" | "document";

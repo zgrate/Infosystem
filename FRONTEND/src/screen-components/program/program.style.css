@@ -1,0 +1,49 @@
+/*.ContainerTable{*/
+/*    justify-content: flex-startjustify-content-md-center;*/
+
+/*}*/
+
+.MainRoomStyleHeader {
+    background-color: deepskyblue;
+
+}
+
+.MainRoomStyleHeader > .column {
+    border: 1px solid
+}
+
+.MainRoomStyleHeader > .header {
+    font-size: 25px;
+    font-weight: bold;
+}
+
+
+.StyleHeader {
+    background-color: lightblue;
+}
+
+.StyleHeader > .content {
+    border: 1px solid
+}
+
+.TableRow {
+    background-color: lightcyan;
+    font-size: 15px
+}
+
+.TableRow > .content {
+    border: 1px solid
+}
+
+.StyleHeader > .header {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.MainStyle {
+    background-color: aqua;
+}
+
+.MainStyleCol {
+    border: 1px solid
+}

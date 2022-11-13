@@ -4,6 +4,7 @@ import { InjectBot } from "nestjs-telegraf";
 import { AdminAuth } from "./auth/admin-auth.decorators";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 import { REFRESH_CACHE } from "./admin.events";
+import { PROGRAM_UPDATE_EVENT } from "../program/entities/program.entity";
 
 @Controller("admin")
 export class AdminController {
@@ -40,4 +41,14 @@ export class AdminController {
     this.eventEmmiter.emit(REFRESH_CACHE);
     return { status: "ok" };
   }
+
+  @Post("/program/refresh")
+  @AdminAuth()
+  programRefresh() {
+    this.logger.debug("Emmiting program refresh signal...");
+    this.eventEmmiter.emit(PROGRAM_UPDATE_EVENT);
+    return { status: "ok" };
+  }
+
+
 }

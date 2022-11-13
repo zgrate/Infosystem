@@ -1,7 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
-import { Observable } from "rxjs";
 import { AdminAuthService } from "../admin-auth.service";
 import { AdminService } from "../../admin.service";
+import * as bcrypt from "bcrypt";
 
 @Injectable()
 export class AcceptGuard implements CanActivate {
@@ -11,14 +11,14 @@ export class AcceptGuard implements CanActivate {
   ) {
   }
 
-  canActivate(
+  async canActivate(
     context: ExecutionContext
-  ): boolean | Promise<boolean> | Observable<boolean> {
+  ): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
     if (
       request.headers["authorization"] ==
       "Bearer " + this.adminAuthService.authKey ||
-      request.headers["authorization"] == "Bearer " + this.adminAuthService.adminPassword
+      await bcrypt.compare(request.headers["authorization"].replace("Bearer ", ""), this.adminAuthService.adminPassword)
     ) {
       return this.adminService.findAdmin("admin").then((it) => {
         const { password, ...result } = it;

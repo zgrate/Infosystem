@@ -41,7 +41,6 @@ export class DbConfigService implements OnModuleInit {
       this.configurationsTemp = items;
       this.logger.debug("Loaded " + items.length);
     });
-
   }
 
   async config<T>(key: SettingsKeys, defaultValue: T = undefined): Promise<T> {
@@ -65,5 +64,13 @@ export class DbConfigService implements OnModuleInit {
 
   async onModuleInit() {
     await this.refreshCache();
+  }
+
+  async saveConfig(key: string, value: any) {
+    const k: DbConfigEntity = {
+      key: key,
+      value: value
+    };
+    return this.repository.save(k);
   }
 }

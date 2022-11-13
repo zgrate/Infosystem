@@ -1,4 +1,3 @@
-import { Column, Entity, OneToMany, PrimaryColumn, PrimaryGeneratedColumn } from "typeorm";
 import { ProgramDescriptionEntity } from "./program-description.entity";
 
 export const NEW_EVENT_REGISTERED = "program.event.new";
@@ -29,49 +28,32 @@ export type EventType =
 //   PRIVATE_NO_DURATION = 'private_no_duration', //Event hidden, and without duration
 // }
 
-@Entity()
-export class ProgramEntity {
-  @PrimaryGeneratedColumn()
+export interface ProgramEntity {
   internalId: number;
 
-  @PrimaryColumn()
   externalId: string;
 
-  @OneToMany(() => ProgramDescriptionEntity, (program) => program.program, {
-    nullable: true
-  })
   translations: ProgramDescriptionEntity[];
 
-  @Column()
   eventState: EventState;
 
-  @Column()
   eventType: EventType;
 
-  @Column()
   eventStartTime: Date;
 
-  @Column({ nullable: true })
   changeStartTime: Date;
 
-  @Column()
   eventScheduledLocation: string;
 
-  @Column({ nullable: true })
   changeEventEndTime: Date;
 
-  @Column({ nullable: true })
   eventEndTime: Date;
 
-  @Column({ nullable: true })
   eventChangedRoom: string;
 
-  @Column({ nullable: true })
   tgUser: string;
 
-  @Column("bigint", { nullable: true })
   tgId: number;
 
-  @Column({ nullable: true })
   userId: number;
 }

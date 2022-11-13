@@ -10,6 +10,7 @@ import { TelegramModule } from "../telegram/telegram.module";
 import { ProgramController } from "./program.controller";
 import { AdminAuthModule } from "../admin/auth/admin-auth.module";
 import { AdminMainModule } from "../admin/admin.module";
+import { ScreenModule } from "../screen-main/screen.module";
 
 const ProgramSourceProvider = {
   provide: ProgramIntegrationInterface,
@@ -21,7 +22,8 @@ const ProgramSourceProvider = {
     TypeOrmModule.forFeature([ProgramEntity, ProgramDescriptionEntity]),
     TelegramModule,
     AdminAuthModule,
-    AdminMainModule
+    AdminMainModule,
+    ScreenModule
   ],
   controllers: [ProgramController],
   providers: [ProgramSourceProvider, ProgramService, ProgramUpdate],

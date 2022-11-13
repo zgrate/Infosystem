@@ -30,4 +30,8 @@ export class ScreenEntity {
   adminMessages: boolean;
   @Column({ default: 10000 })
   peopleMessageRotate: number;
+  @Column({ default: 10 })
+  maxMainRoomEntry: number;
+  @Column({ default: 10 })
+  maxOtherRoomEntry: number;
 }
