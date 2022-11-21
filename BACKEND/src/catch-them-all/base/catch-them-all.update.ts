@@ -1,8 +1,11 @@
 import { Command, Ctx, On, Update } from "nestjs-telegraf";
 import { Context } from "telegraf";
 import { CatchThemAllService } from "./catch-them-all.service";
+import { UseGuards } from "@nestjs/common";
+import { BannedGuard } from "../../telegram/banned.guard";
 
 @Update()
+@UseGuards(BannedGuard)
 export class CatchThemAllUpdate {
   constructor(private catchTheAllService: CatchThemAllService) {
   }

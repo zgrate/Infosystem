@@ -4,6 +4,7 @@ import { DbConfigEntity } from "./db-config.entity";
 import { Repository } from "typeorm";
 import { Cron, CronExpression } from "@nestjs/schedule";
 import { OnEvent } from "@nestjs/event-emitter";
+import { REFRESH_CACHE } from "../admin/admin.events";
 
 export type SettingsKeys =
   | "admin-group"
@@ -16,7 +17,9 @@ export type SettingsKeys =
   | "org_chat"
   | "security_chat"
   | "chat-forward-timeout"
-  | "photos_chat";
+  | "photos_chat"
+  | "admin-message"
+  | "banned";
 
 @Injectable()
 export class DbConfigService implements OnModuleInit {
@@ -34,7 +37,7 @@ export class DbConfigService implements OnModuleInit {
     await this.cacheRefresh();
   }
 
-  @OnEvent("admin.settings.refresh")
+  @OnEvent(REFRESH_CACHE)
   cacheRefresh() {
     this.logger.log("Refreshing settings....");
     return this.repository.find().then((items) => {
@@ -66,11 +69,11 @@ export class DbConfigService implements OnModuleInit {
     await this.refreshCache();
   }
 
-  async saveConfig(key: string, value: any) {
+  async saveConfig(key: SettingsKeys, value: any) {
     const k: DbConfigEntity = {
       key: key,
       value: value
     };
-    return this.repository.save(k);
+    return this.repository.save(k).then(() => this.cacheRefresh());
   }
 }

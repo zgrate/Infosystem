@@ -19,7 +19,7 @@
 
 .Moved {
     color: lightcoral;
-
+    font-weight: bold;
 }
 
 .MainRoomStyleHeader > .header {

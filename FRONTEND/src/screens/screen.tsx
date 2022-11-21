@@ -8,8 +8,7 @@ import { axiosService } from "../services/AxiosService";
 import { ProgramFragment } from "../screen-components/program/program-fragment";
 import { SlideshowFragment } from "../screen-components/program/slideshow.fragment";
 import { StreamFragment } from "../screen-components/stream-fragment";
-
-const message_org = ["Witamy na Futrołajkach 2022!", "Przypominamy, że możesz zgłosić swój punkt programu na @futrolajkibot!", "Przypominamy, że pokój 111 ma zakaz robienia dziur w ścianiach", "Przypominamy, że Z-Grate ma zakaz walenia balonów. Wszystkie nadużycia prosimy zgłaszać na @futrolajki bot lub telefonicznie"];
+import { AdminMessageFragment } from "../screen-components/admin-message.fragment";
 
 export const socketIO = io(process.env.REACT_APP_API_URL!, {
   auth: {
@@ -40,6 +39,8 @@ export const DisplayFragment = (props: { mode: string, screen: ScreenEntity, soc
     return <ProgramFragment screen={props.screen} socketIO={props.socketIO} />;
   } else if (props.mode === "slideshow") {
     return <SlideshowFragment socketIO={props.socketIO} />;
+  } else if (props.mode === "message") {
+    return <AdminMessageFragment forceReload={true} />;
   }
 
   return <></>;
@@ -57,7 +58,7 @@ export const ScreenMain = () => {
 
   const executeUpdate = () => {
 
-    return axiosService.get("/screen/info/" + localStorage.getItem("screenId"), { validateStatus: (status) => status < 500 }).then(it => {
+    axiosService.get("/screen/info/" + localStorage.getItem("screenId"), { validateStatus: (status) => status < 500 }).then(it => {
       if (it.status > 400) {
         console.log("TEST");
         localStorage.removeItem("screenId");
@@ -89,6 +90,55 @@ export const ScreenMain = () => {
     //TODO: Error handling?
   };
 
+  const updateMessages = () => {
+    if (!messagesLoading && screenSettings != null) {
+      if (forceMessageReload || (screenSettings?.peopleMessages && screenSettings?.adminMessages && messages === undefined)) {
+        axiosService.get("messages").then((res) => {
+          let admins: AdminMessageEntity[] = res.data["admin"];
+          const peoples: PeopleMessageEntity[] = res.data["people"];
+          if (admins.length < 6) {
+            while (admins.length < 6) {
+              admins = admins.concat(admins);
+            }
+          }
+          setMessages({ adminMessages: admins, peopleMessages: peoples });
+          setMessageLoading(false);
+          lastUpdate = Date.now();
+        }).catch(it => {
+          console.log("Trying again  soon...");
+          setTimeout(() => setMessageLoading(false), CONNECTION_TIMEOUT);
+        });
+        setMessageLoading(true);
+        setForceMessageReload(false);
+      } else if (forceMessageReload || (screenSettings?.peopleMessages && messages === undefined)) {
+        axiosService.get("messages/people").then((res) => {
+          const peoples: PeopleMessageEntity[] = res.data;
+          setMessages({ peopleMessages: peoples, adminMessages: undefined });
+          setMessageLoading(false);
+          lastUpdate = Date.now();
+        }).catch(it => {
+          console.log("Trying again  soon...");
+          setTimeout(() => setMessageLoading(false), CONNECTION_TIMEOUT);
+        });
+        setMessageLoading(true);
+        setForceMessageReload(false);
+      } else if (forceMessageReload || (screenSettings?.adminMessages && messages === undefined)) {
+        axiosService.get("messages/admin").then((res) => {
+          const admins: AdminMessageEntity[] = res.data;
+          setMessages({ peopleMessages: undefined, adminMessages: admins });
+
+          setMessageLoading(false);
+          setForceMessageReload(false);
+          lastUpdate = Date.now();
+        }).catch(it => {
+          console.log("Trying again  soon...");
+          setTimeout(() => setMessageLoading(false), CONNECTION_TIMEOUT);
+        });
+        setMessageLoading(true);
+      }
+    }
+  };
+
   useEffect(() => {
 
     socketIO.on("connect_error", (data) => {
@@ -108,6 +158,7 @@ export const ScreenMain = () => {
       console.log(erro);
     });
     socketIO.on("screen.mode.change", (...args) => {
+      console.log("SCREEN MODE SCHAGNGE");
       setMode(args[0]);
     });
     socketIO.on("screen.settings.update", () => {
@@ -119,6 +170,9 @@ export const ScreenMain = () => {
     socketIO.on("pong", () => {
       console.log("Ponged!");
       lastPong = (Date.now());
+    });
+    socketIO.on("screen.refresh", () => {
+      window.location.reload();
     });
     const timeout = setInterval(() => {
       if (Date.now() - lastPong > PING_INTERVAL * 2) {
@@ -144,6 +198,14 @@ export const ScreenMain = () => {
 
     socketIO.connect();
 
+    updateMessages();
+
+    if (screenSettings === undefined) {
+      if (!loading) {
+        executeUpdate();
+      }
+    }
+
     return () => {
       clearInterval(timeout);
       clearInterval(peopleMessageTimeout);
@@ -153,64 +215,61 @@ export const ScreenMain = () => {
       socketIO.off("pong");
       socketIO.off("screen.settings.update");
       socketIO.off("screen.messages.update");
+      socketIO.off("screen.refresh");
     };
-  }, [setMode, executeUpdate, setForceMessageReload, screenSettings, messages?.peopleMessages, peopleMessageIndex]);
+  }, [screenSettings, messages?.peopleMessages, peopleMessageIndex, updateMessages, loading]);
 
   if (!localStorage.getItem("screenId")) {
     return <Navigate replace to={"/auth"} />;
   }
-  if (screenSettings === undefined) {
-    if (!loading) {
-      executeUpdate();
-    }
-  }
-  // console.log(screenSettings)
-  if (!messagesLoading && screenSettings != null) {
-    if (forceMessageReload || (screenSettings?.peopleMessages && screenSettings?.adminMessages && messages === undefined)) {
-      axiosService.get("messages").then((res) => {
-        let admins: AdminMessageEntity[] = res.data["admin"];
-        const peoples: PeopleMessageEntity[] = res.data["people"];
-        if (admins.length < 6) {
-          while (admins.length < 6) {
-            admins = admins.concat(admins);
-          }
-        }
-        setMessages({ adminMessages: admins, peopleMessages: peoples });
-        setMessageLoading(false);
-        lastUpdate = Date.now();
-      }).catch(it => {
-        console.log("Trying again  soon...");
-        setTimeout(() => setMessageLoading(false), CONNECTION_TIMEOUT);
-      });
-      setMessageLoading(true);
-      setForceMessageReload(false);
-    } else if (forceMessageReload || (screenSettings?.peopleMessages && messages === undefined)) {
-      axiosService.get("messages/people").then((res) => {
-        const peoples: PeopleMessageEntity[] = res.data;
-        setMessages({ peopleMessages: peoples, adminMessages: undefined });
-        setMessageLoading(false);
-        lastUpdate = Date.now();
-      }).catch(it => {
-        console.log("Trying again  soon...");
-        setTimeout(() => setMessageLoading(false), CONNECTION_TIMEOUT);
-      });
-      setMessageLoading(true);
-      setForceMessageReload(false);
-    } else if (forceMessageReload || (screenSettings?.adminMessages && messages === undefined)) {
-      axiosService.get("messages/admin").then((res) => {
-        const admins: AdminMessageEntity[] = res.data;
-        setMessages({ peopleMessages: undefined, adminMessages: admins });
 
-        setMessageLoading(false);
-        setForceMessageReload(false);
-        lastUpdate = Date.now();
-      }).catch(it => {
-        console.log("Trying again  soon...");
-        setTimeout(() => setMessageLoading(false), CONNECTION_TIMEOUT);
-      });
-      setMessageLoading(true);
-    }
-  }
+  // console.log(screenSettings)
+  // if (!messagesLoading && screenSettings != null) {
+  //   if (forceMessageReload || (screenSettings?.peopleMessages && screenSettings?.adminMessages && messages === undefined)) {
+  //     axiosService.get("messages").then((res) => {
+  //       let admins: AdminMessageEntity[] = res.data["admin"];
+  //       const peoples: PeopleMessageEntity[] = res.data["people"];
+  //       if (admins.length < 6) {
+  //         while (admins.length < 6) {
+  //           admins = admins.concat(admins);
+  //         }
+  //       }
+  //       setMessages({ adminMessages: admins, peopleMessages: peoples });
+  //       setMessageLoading(false);
+  //       lastUpdate = Date.now();
+  //     }).catch(it => {
+  //       console.log("Trying again  soon...");
+  //       setTimeout(() => setMessageLoading(false), CONNECTION_TIMEOUT);
+  //     });
+  //     setMessageLoading(true);
+  //     setForceMessageReload(false);
+  //   } else if (forceMessageReload || (screenSettings?.peopleMessages && messages === undefined)) {
+  //     axiosService.get("messages/people").then((res) => {
+  //       const peoples: PeopleMessageEntity[] = res.data;
+  //       setMessages({ peopleMessages: peoples, adminMessages: undefined });
+  //       setMessageLoading(false);
+  //       lastUpdate = Date.now();
+  //     }).catch(it => {
+  //       console.log("Trying again  soon...");
+  //       setTimeout(() => setMessageLoading(false), CONNECTION_TIMEOUT);
+  //     });
+  //     setMessageLoading(true);
+  //     setForceMessageReload(false);
+  //   } else if (forceMessageReload || (screenSettings?.adminMessages && messages === undefined)) {
+  //     axiosService.get("messages/admin").then((res) => {
+  //       const admins: AdminMessageEntity[] = res.data;
+  //       setMessages({ peopleMessages: undefined, adminMessages: admins });
+  //
+  //       setMessageLoading(false);
+  //       setForceMessageReload(false);
+  //       lastUpdate = Date.now();
+  //     }).catch(it => {
+  //       console.log("Trying again  soon...");
+  //       setTimeout(() => setMessageLoading(false), CONNECTION_TIMEOUT);
+  //     });
+  //     setMessageLoading(true);
+  //   }
+  // }
 
   console.log(mode);
 
@@ -220,9 +279,6 @@ export const ScreenMain = () => {
       Proszę czekać, trwa ogarnianie połączenia...
     </div>;
   } else if (mode === "connection_error") {
-    setTimeout(() => {
-      executeUpdate();
-    }, CONNECTION_TIMEOUT);
     return <div className={"App"}>
       Problem z połączeniem, proszę czekać....
     </div>;

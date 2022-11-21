@@ -18,11 +18,6 @@ export const AuthScreen = () => {
   const [refresh, setRefresh] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const screenRequest = () => {
-
-
-  };
-
   useEffect(() => {
     let ignore = false;
     if (localStorage.getItem("screenId") && screenData === undefined && !loading) {

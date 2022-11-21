@@ -17,6 +17,7 @@ import { TelegrafModule } from "nestjs-telegraf";
 import { CatchThemAllModule } from "./catch-them-all/base/catch-them-all.module";
 import { DbConfigModule } from "./db-config/db-config.module";
 import { MessagesModule } from "./messages/messages.module";
+import { ChatForwarderModule } from "./telegram/chat-forwarder/chat-forwarder.module";
 
 export const TGException = (ctx, next) => {
   console.log(next);
@@ -62,8 +63,9 @@ export const TGException = (ctx, next) => {
     ScreenWebSocketModule,
     ScreenModesModule,
     AccreditationModule,
+    MessagesModule,
     CatchThemAllModule,
-    MessagesModule
+    ChatForwarderModule
   ],
   controllers: [AppController],
   providers: [AppService]

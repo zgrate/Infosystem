@@ -8,7 +8,6 @@ import { OnEvent } from "@nestjs/event-emitter";
 
 @Injectable()
 export class TelegramService implements OnModuleInit {
-
   lastRegEvent: number = undefined;
   adminsTG = [];
 
@@ -16,6 +15,12 @@ export class TelegramService implements OnModuleInit {
     @InjectBot() private bot: Telegraf,
     private dbConfig: DbConfigService
   ) {
+  }
+
+  async isBanned(nickname: string): Promise<boolean> {
+    return this.dbConfig
+      .config<string[]>("banned", [])
+      ?.then((it) => it.includes(nickname));
   }
 
   async getUsernameUsingChatID(tgId: number) {
@@ -48,7 +53,6 @@ export class TelegramService implements OnModuleInit {
       message
     );
   }
-
 
   @OnEvent(NEW_EVENT_REGISTERED)
   newEventMessage(program: ProgramEntity) {

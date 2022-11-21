@@ -1,6 +1,8 @@
 import { applyDecorators, createParamDecorator, ExecutionContext, UseGuards } from "@nestjs/common";
 import { User } from "typegram/manage";
 import { AdminAuthorization } from "./admin-auth.guard";
+import { BannedGuard } from "./banned.guard";
+import { Update } from "nestjs-telegraf";
 
 export const TGUser = createParamDecorator(
   (data, ctx: ExecutionContext): User => {
@@ -22,5 +24,10 @@ export const TGArguments = createParamDecorator(
 export const TGAdminAuth = () => {
   return applyDecorators(UseGuards(AdminAuthorization));
 };
+
+export const TGUpdate = () => {
+  return applyDecorators(Update, UseGuards(BannedGuard));
+};
+
 
 // const commands = ctx.message.text.split(" ").slice(1);

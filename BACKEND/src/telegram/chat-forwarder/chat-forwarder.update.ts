@@ -3,8 +3,11 @@ import { Context } from "telegraf";
 import { User } from "typegram/manage";
 import { TGUser } from "../telegram.decorators";
 import { ChatForwarderService } from "./chat-forwarder.service";
+import { UseGuards } from "@nestjs/common";
+import { BannedGuard } from "../banned.guard";
 
 @Update()
+@UseGuards(BannedGuard)
 export class ChatForwarderUpdate {
   constructor(private chatForwarderService: ChatForwarderService) {
   }
@@ -66,7 +69,11 @@ export class ChatForwarderUpdate {
       context.chat.type == "private" &&
       this.chatForwarderService.isForwardingChat(user.id)
     ) {
-      await this.chatForwarderService.forwardChat(context.message, user);
+      await this.chatForwarderService.forwardChat(context.message, user).then(async it => {
+        if (it == "please_wait") {
+          await context.reply("Nie tak szybko! Poczekaj 0.5 sekundy!");
+        }
+      });
     }
   }
 }

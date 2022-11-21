@@ -6,8 +6,11 @@ import { ProgramFormDTO } from "./program-form.dto";
 import { ProgramService } from "../program.service";
 import { TGArguments, TGUser } from "../../telegram/telegram.decorators";
 import { TelegramService } from "../../telegram/service/telegram.service";
+import { UseGuards } from "@nestjs/common";
+import { BannedGuard } from "../../telegram/banned.guard";
 
 @Update()
+@UseGuards(BannedGuard)
 export class ProgramUpdate {
   constructor(
     private programService: ProgramService,

@@ -1,11 +1,13 @@
 import { Command, Ctx, Start, Update } from "nestjs-telegraf";
-import { OnModuleInit, Param } from "@nestjs/common";
+import { OnModuleInit, Param, UseGuards } from "@nestjs/common";
 import { Context } from "telegraf";
 import { DbConfigPipe } from "../../db-config/db-config.pipe";
 import { User } from "typegram/manage";
 import { TGUser } from "../telegram.decorators";
+import { BannedGuard } from "../banned.guard";
 
 @Update()
+@UseGuards(BannedGuard)
 export class TelegramUpdate implements OnModuleInit {
   @Start()
   async test(

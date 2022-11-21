@@ -1,10 +1,12 @@
-import { Controller, Logger, Post } from "@nestjs/common";
+import { Body, Controller, Logger, Param, Post } from "@nestjs/common";
 import { Telegraf } from "telegraf";
 import { InjectBot } from "nestjs-telegraf";
 import { AdminAuth } from "./auth/admin-auth.decorators";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 import { REFRESH_CACHE } from "./admin.events";
 import { PROGRAM_UPDATE_EVENT } from "../program/entities/program.entity";
+import { SCREEN_REFRESH_EVENT } from "../screen-main/services/screen.service";
+import { DbConfigService } from "../db-config/db-config.service";
 
 @Controller("admin")
 export class AdminController {
@@ -13,7 +15,8 @@ export class AdminController {
 
   constructor(
     @InjectBot() private tgAdmin: Telegraf,
-    private eventEmmiter: EventEmitter2
+    private eventEmmiter: EventEmitter2,
+    private dbConfig: DbConfigService
   ) {
   }
 
@@ -50,5 +53,24 @@ export class AdminController {
     return { status: "ok" };
   }
 
+  @Post("/message")
+  @AdminAuth()
+  setMessage(@Body() message: any) {
+    // console.log(message["message"])
+    return this.dbConfig.saveConfig("admin-message", message["message"]);
+  }
 
+  @Post("/reload/:name")
+  @AdminAuth()
+  refreshSite(@Param("name") name: string) {
+    this.logger.debug("Reloading screen..." + name);
+    return this.eventEmmiter
+      .emitAsync(SCREEN_REFRESH_EVENT, name)
+      .then((it) => {
+        return {
+          status: "ok",
+          response: it
+        };
+      });
+  }
 }

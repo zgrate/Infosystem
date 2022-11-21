@@ -81,22 +81,28 @@ export class ChatForwarderService {
     return false;
   }
 
-  async forwardChat(message: Message, from: User) {
+  async forwardChat(message: Message, from: User): Promise<"please_wait" | "ok" | "no_forward"> {
     const chatForwarder = this.chatForwarding.find((it) => it.tgId == from.id);
     if (chatForwarder) {
-      await this.botService.telegram.forwardMessage(
-        await this.dbConfig.config(
-          chatForwarder.target === "org"
-            ? "org_chat"
-            : chatForwarder.target === "photos_chat"
-              ? "photos_chat"
-              : "security_chat"
-        ),
-        message.chat.id,
-        message.message_id
-      );
-      chatForwarder.lastMessage = Date.now();
+      if (chatForwarder.target !== "photos_chat" && Date.now() - chatForwarder.lastMessage < 500) {
+        return "please_wait";
+      } else {
+        await this.botService.telegram.forwardMessage(
+          await this.dbConfig.config(
+            chatForwarder.target === "org"
+              ? "org_chat"
+              : chatForwarder.target === "photos_chat"
+                ? "photos_chat"
+                : "security_chat"
+          ),
+          message.chat.id,
+          message.message_id
+        );
+        chatForwarder.lastMessage = Date.now();
+        return "ok";
+      }
     }
+    return "no_forward";
   }
 
   isForwardingChat(id: number) {

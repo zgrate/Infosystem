@@ -4,11 +4,13 @@ import { AdminService } from "./admin.service";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { AdminEntity } from "./admin.entity";
 import { AdminAuthModule } from "./auth/admin-auth.module";
+import { DbConfigModule } from "../db-config/db-config.module";
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([AdminEntity]),
-    AdminAuthModule
+    AdminAuthModule,
+    DbConfigModule
   ],
   controllers: [AdminController],
   providers: [AdminService],

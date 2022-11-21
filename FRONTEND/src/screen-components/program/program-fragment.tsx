@@ -8,7 +8,7 @@ import { Col, Container, Row } from "react-bootstrap";
 
 const FormatDate = (date: string) => {
   const data = new Date(date);
-  return data.getHours() + ":" + data.getMinutes();
+  return data.getHours().toString().padStart(2, "0") + ":" + data.getMinutes().toString().padStart(2, "0");
 };
 
 const GenerateTable = (props: { program: ProgramEntity[], fullWidth: boolean }) => {
@@ -34,9 +34,9 @@ const MainTableRow = (props: { program: ProgramEntity, myRoom: string }) => {
   const getRoomChange = () => {
     if (props.program.eventChangedRoom) {
       if (props.program.eventChangedRoom === props.myRoom) {
-        return "TERAZ W TEJ SALI!";
+        return " TERAZ W TEJ SALI!";
       } else {
-        return "TERAZ W " + capitalizeFirstLetter(props.program.eventScheduledLocation);
+        return " TERAZ W " + capitalizeFirstLetter(props.program.eventScheduledLocation);
       }
     } else {
       return "";
@@ -55,11 +55,12 @@ const MainTableRow = (props: { program: ProgramEntity, myRoom: string }) => {
     return <Row className={"MainStyle"}>
       <Col xs={2} className={"MainStyleCol"}>
         <span
+          style={{ textDecoration: !!props.program.eventStartTime ? "line-through" : "" }}
           className={"Moved"}>{FormatDate(props.program.eventStartTime.toString())}</span> {!!props.program.changeStartTime ? FormatDate(props.program.changeStartTime.toString()) : ""}
       </Col>
       <Col className={"MainStyleCol"}>
         <span
-          className={"Moved"}>{props.program.translations[0].title}</span><span><strong>ZMIANA!{getRoomChange()}</strong></span>
+          className={"Moved"}>{props.program.translations[0].title}</span><span><strong> ZMIANA! {getRoomChange()}</strong></span>
       </Col>
     </Row>;
   } else {
@@ -197,7 +198,7 @@ export const ProgramFragment = (props: { screen: ScreenEntity, socketIO: Socket 
             sale
           </div>
           <GenerateTable
-            program={program.filter(it => it.eventScheduledLocation !== props.screen.preferredRoom).slice(0, props.screen.maxOtherRoomEntry)}
+            program={program.filter(it => it.eventScheduledLocation !== props.screen.preferredRoom && (it.eventState !== "moved" && it.eventScheduledLocation !== props.screen.preferredRoom)).slice(0, props.screen.maxOtherRoomEntry)}
             fullWidth={false} />
         </div>
       </div>;

@@ -11,10 +11,14 @@ import {
 import { ScreenService } from "../services/screen.service";
 import { ScreenEntity } from "../../shared/entities/screen.entity";
 import { RegisteredScreen, ScreenID } from "../screen.decorators";
+import { DbConfigService } from "../../db-config/db-config.service";
 
 @Controller("screen")
 export class ScreenController {
-  constructor(private screenService: ScreenService) {
+  constructor(
+    private screenService: ScreenService,
+    private dbConfig: DbConfigService
+  ) {
   }
 
   @Get("info/:id")
@@ -50,4 +54,10 @@ export class ScreenController {
     return this.screenService.registerNewScreen(ip);
   }
 
+  @Get("message")
+  async getMessage() {
+    return this.dbConfig.config<string>("admin-message").then((it) => {
+      return { status: "ok", result: it };
+    });
+  }
 }

@@ -7,7 +7,9 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 import { MODE_CHANGE_EVENT, ModeChangeEvent } from "../../screen-events/events/mode-change.event";
 
-export type ModeType = "program" | "info" | "stream" | "document";
+export type ModeType = "program" | "info" | "stream" | "message";
+export const SCREEN_REFRESH_EVENT = "screen.refresh";
+
 
 @Injectable()
 export class ScreenService implements OnModuleInit {

@@ -6,13 +6,11 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { TelegramCommandsUpdate } from "./service/telegram-commands.update";
 import { TelegramCommandEntity } from "./entity/telegram-command.entity";
 import { AuthorisedTgUserEntity } from "./entity/authorised-tg-user.entity";
-import { ChatForwarderModule } from "./chat-forwarder/chat-forwarder.module";
 
 @Module({
   imports: [
     DbConfigModule,
     TypeOrmModule.forFeature([TelegramCommandEntity, AuthorisedTgUserEntity]),
-    ChatForwarderModule
   ],
   providers: [TelegramUpdate, TelegramService, TelegramCommandsUpdate],
   // controllers: [TelegramUpdate]
