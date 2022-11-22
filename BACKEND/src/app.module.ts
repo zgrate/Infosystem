@@ -51,6 +51,7 @@ export const TGException = (ctx, next) => {
         telegram: {
           testEnv: process.env.BOT_TEST_ENV === "true"
         }
+
       }
     }),
     ScheduleModule.forRoot(),
@@ -71,4 +72,5 @@ export const TGException = (ctx, next) => {
   providers: [AppService]
 })
 export class AppModule {
+
 }

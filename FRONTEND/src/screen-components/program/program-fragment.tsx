@@ -177,8 +177,6 @@ export const ProgramFragment = (props: { screen: ScreenEntity, socketIO: Socket 
   if (program === undefined || forceRefresh) {
     return <div> Ładowanie programu... </div>;
   } else {
-    console.log(program);
-    console.log(props.screen);
     if (props.screen.preferredRoom != undefined) {
       return <div style={{ display: "flex", flexDirection: "row", justifyContent: "space-between", margin: 10 }}>
         <div style={{ width: "60%", margin: 5 }}>

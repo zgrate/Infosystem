@@ -1,8 +1,8 @@
 import { applyDecorators, createParamDecorator, ExecutionContext, UseGuards } from "@nestjs/common";
 import { User } from "typegram/manage";
-import { AdminAuthorization } from "./admin-auth.guard";
-import { BannedGuard } from "./banned.guard";
 import { Update } from "nestjs-telegraf";
+import { AdminAuthorization } from "./guards/admin-auth.guard";
+import { BannedGuard } from "./guards/banned.guard";
 
 export const TGUser = createParamDecorator(
   (data, ctx: ExecutionContext): User => {

@@ -23,11 +23,15 @@ async function bootstrap() {
   if (useHTTPS) {
     app = await NestFactory.create(AppModule, httpsOptions);
   } else {
-    app = await NestFactory.create(AppModule);
+    app = await NestFactory.create(AppModule, {
+      abortOnError: false
+    });
   }
+
   app.use(requestIp.mw());
   app.enableCors({ origin: "*" });
   await app.listen(process.env.PORT);
 }
 
-bootstrap().catch(it => bootstrap());
+
+bootstrap();

@@ -99,3 +99,8 @@ body {
     padding-left: 10px;
 }
 
+.CenterAlign {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}

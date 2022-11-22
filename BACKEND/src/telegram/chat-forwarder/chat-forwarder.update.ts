@@ -1,13 +1,14 @@
-import { Command, Ctx, On, Update } from "nestjs-telegraf";
+import { Command, Ctx, Update } from "nestjs-telegraf";
 import { Context } from "telegraf";
 import { User } from "typegram/manage";
 import { TGUser } from "../telegram.decorators";
 import { ChatForwarderService } from "./chat-forwarder.service";
 import { UseGuards } from "@nestjs/common";
-import { BannedGuard } from "../banned.guard";
+import { BannedGuard } from "../guards/banned.guard";
+import { PrivateChatGuard } from "../guards/private-chat.guard";
 
 @Update()
-@UseGuards(BannedGuard)
+@UseGuards(BannedGuard, PrivateChatGuard)
 export class ChatForwarderUpdate {
   constructor(private chatForwarderService: ChatForwarderService) {
   }
@@ -32,7 +33,7 @@ export class ChatForwarderUpdate {
       this.chatForwarderService
         .enableChatForward("security", user)
         .then(
-          async (it) =>
+          async () =>
             await context.reply(
               "Czat z sefurity nawiązany! Wszystko co napiszesz lub wyślesz zostanie wysłane do sefurity! /disable żeby wyłączyć"
             )
@@ -40,7 +41,7 @@ export class ChatForwarderUpdate {
     }
   }
 
-  @Command(["/konwent_zdjecia"])
+  @Command(["/zdjecia", "/zdjecia_konwent"])
   async enablePhotosChat(@Ctx() context: Context, @TGUser() user: User) {
     if (context.chat.type === "private") {
       this.chatForwarderService
@@ -63,17 +64,5 @@ export class ChatForwarderUpdate {
     }
   }
 
-  @On("message")
-  async onUpdate(@Ctx() context: Context, @TGUser() user: User) {
-    if (
-      context.chat.type == "private" &&
-      this.chatForwarderService.isForwardingChat(user.id)
-    ) {
-      await this.chatForwarderService.forwardChat(context.message, user).then(async it => {
-        if (it == "please_wait") {
-          await context.reply("Nie tak szybko! Poczekaj 0.5 sekundy!");
-        }
-      });
-    }
-  }
+
 }

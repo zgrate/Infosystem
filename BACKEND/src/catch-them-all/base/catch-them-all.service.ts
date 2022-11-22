@@ -2,11 +2,13 @@ import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { CatchThemAllCatchEntity, CatchThemAllEntity } from "./catch-them-all.entity";
 import { Like, Repository } from "typeorm";
+import { handleException } from "../../exception.filter";
 
 export interface RecentlyCaught {
   fursuitId: string;
   tgId: number;
   catchId: number;
+  catchTime: number;
 }
 
 @Injectable()
@@ -19,6 +21,38 @@ export class CatchThemAllService {
     @InjectRepository(CatchThemAllCatchEntity)
     private catchesRepo: Repository<CatchThemAllCatchEntity>
   ) {
+  }
+
+  findFursuits(limit = 99999) {
+    return this.repository.query(
+      "SELECT \"fursuitName\" as \"name\", \"filename\" as \"img\" COUNT(b.\"catchId\") FROM public.catch_them_all_entity a LEFT JOIN PUBLIC.catch_them_all_catch_entity b ON a.\"fursuitId\" = b.\"fursuitFursuitId\" GROUP BY a.\"fursuitId\" ORDER BY COUNT DESC LIMIT $1",
+      [limit]
+    );
+
+    // return this.repository
+    //   .find({
+    //     select: {
+    //       fursuitName,
+    //       COUNT(catched)
+    //     },
+    //     relations: {
+    //       catched: true,
+    //     },
+    //     order: {
+    //       fursuitName: 'ASC',
+    //     },
+    //   })
+    //   .then((response) => {
+    //     return response
+    //       .map((it) => {
+    //         return {
+    //           name: it.fursuitName,
+    //           count: it.catched.length,
+    //         };
+    //       })
+    //       .sort((it) => it.count)
+    //       .reverse();
+    //   });
   }
 
   findFursuit(fursuitId: string, retrieveCatches = false) {
@@ -46,8 +80,9 @@ export class CatchThemAllService {
       } else {
         fursuitCatch.photos.push(fileId);
         return await this.catchesRepo.save(fursuitCatch).then((it) => {
-          if (it === undefined) return "error";
+          if (!it) return "error";
           else {
+            recentCatch.catchTime = Date.now();
             return "ok";
           }
         });
@@ -68,8 +103,8 @@ export class CatchThemAllService {
   }
 
   switchCatch(fursuitIdName: string, tgId: number) {
-    return this.findFursuitByNameId(fursuitIdName).then((fursuit) => {
-      if (fursuit === undefined) {
+    return this.findFursuitByNameId(fursuitIdName, true).then((fursuit) => {
+      if (!fursuit) {
         return "fursuit_not_found";
       } else {
         const catched = fursuit.catched.find((it) => it.tgId == tgId);
@@ -77,11 +112,12 @@ export class CatchThemAllService {
           return "didnt_catch";
         } else {
           const c = this.lastCatches.find((it) => it.tgId == tgId);
-          if (c === undefined) {
-            const newEle = {
+          if (!c) {
+            const newEle: RecentlyCaught = {
               tgId: tgId,
               catchId: catched.catchId,
-              fursuitId: fursuit.fursuitId
+              fursuitId: fursuit.fursuitId,
+              catchTime: Date.now()
             };
             this.lastCatches.push(newEle);
           } else {
@@ -115,7 +151,8 @@ export class CatchThemAllService {
       if (fursuit == null) {
         return "error";
       } else {
-        if (fursuit.catched.some((it) => it.tgId === tgId)) {
+        console.log(fursuit);
+        if (fursuit.catched.some((it) => it.tgId == tgId)) {
           return "caught";
         } else {
           const catched = new CatchThemAllCatchEntity();
@@ -127,21 +164,42 @@ export class CatchThemAllService {
           return this.repository
             .save(fursuit, { reload: true })
             .then((it) => {
-              console.log("uwuw");
-              console.log(it);
               if (it == null) return "db_error";
               else {
                 this.lastCatches.push({
                   fursuitId: it.fursuitId,
                   tgId: tgId,
-                  catchId: it.catched.find((it) => it.tgId == tgId)?.catchId
+                  catchId: it.catched.find((it) => it.tgId == tgId)?.catchId,
+                  catchTime: Date.now()
                 });
                 return it.fursuitName;
               }
             })
-            .catch(() => "db_error");
+            .catch((error) => {
+              handleException(error);
+              return "db_error";
+            });
         }
       }
     });
+  }
+
+  cleanupCatches() {
+    this.lastCatches = this.lastCatches.filter(
+      (it) => Date.now() - it.catchTime < 60000
+    );
+  }
+
+  isCatching(tgId: number) {
+    return this.lastCatches.findIndex((it) => it.tgId == tgId) !== -1;
+  }
+
+  doneCatching(id: number): "ok" | "no_catch" {
+    const recentCatch = this.lastCatches.findIndex((it) => it.tgId == id);
+    if (recentCatch !== -1) {
+      this.lastCatches.splice(recentCatch, 1);
+      return "ok";
+    }
+    return "no_catch";
   }
 }

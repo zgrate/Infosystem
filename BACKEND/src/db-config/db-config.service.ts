@@ -19,7 +19,8 @@ export type SettingsKeys =
   | "chat-forward-timeout"
   | "photos_chat"
   | "admin-message"
-  | "banned";
+  | "banned"
+  | "convention-start";
 
 @Injectable()
 export class DbConfigService implements OnModuleInit {

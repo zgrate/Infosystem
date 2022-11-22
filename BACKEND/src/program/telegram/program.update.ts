@@ -7,7 +7,9 @@ import { ProgramService } from "../program.service";
 import { TGArguments, TGUser } from "../../telegram/telegram.decorators";
 import { TelegramService } from "../../telegram/service/telegram.service";
 import { UseGuards } from "@nestjs/common";
-import { BannedGuard } from "../../telegram/banned.guard";
+import { BannedGuard } from "../../telegram/guards/banned.guard";
+import { PrivateChatGuard } from "../../telegram/guards/private-chat.guard";
+import { handleException } from "../../exception.filter";
 
 @Update()
 @UseGuards(BannedGuard)
@@ -19,23 +21,26 @@ export class ProgramUpdate {
   }
 
   @Command("proponuj")
+  @UseGuards(PrivateChatGuard)
   async getProgramProposition(@Ctx() ctx: Context<any>) {
     if (ctx.chat.type === "private") {
-      await ctx.reply("Kliknij w przycisk aby dodać punkt programu", {
-        reply_markup: {
-          one_time_keyboard: true,
-          keyboard: [
-            [
-              {
-                text: "Dodaj punkt programu!",
-                web_app: {
-                  url: "https://res.futrolajki.pl/test.html"
+      await ctx
+        .reply("Kliknij w przycisk aby dodać punkt programu", {
+          reply_markup: {
+            one_time_keyboard: true,
+            keyboard: [
+              [
+                {
+                  text: "Proponuj!",
+                  web_app: {
+                    url: "https://res.futrolajki.pl/test.html"
+                  }
                 }
-              }
+              ]
             ]
-          ]
-        }
-      });
+          }
+        })
+        .catch((error) => handleException(error));
     }
   }
 
@@ -46,7 +51,8 @@ export class ProgramUpdate {
 
   @On("web_app_data")
   async processProgram(@Ctx() ctx: Context<any>, @TGUser() tgUser: User) {
-    if (ctx.webAppData.button_text == "Dodaj punkt programu!") {
+    console.log(ctx.webAppData);
+    if (ctx.webAppData.button_text == "Proponuj!") {
       const dto: ProgramFormDTO = JSON.parse(ctx.webAppData.data.text());
       dto["tgId"] = tgUser.id;
       dto["tgUsername"] = tgUser.username;
@@ -96,7 +102,7 @@ export class ProgramUpdate {
         num = Number(args[0]);
       }
 
-      if (this.programService.denyEvent(num)) {
+      if (await this.programService.denyEvent(num)) {
         await ctx.reply("EVENT ACCEPTED!");
       } else {
         await ctx.reply("ERROR");

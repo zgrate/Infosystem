@@ -8,19 +8,25 @@ import { HelloWorld } from "./hello-world";
 import { AuthScreen } from "./screens/auth-screen";
 import { AdminPanel } from "./screen-admin/admin-panel";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { FursuitPage } from "./fursuits/fursuit.page";
 
 function App() {
-  return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<HelloWorld />} />
-        <Route path="/auth" element={<AuthScreen />} />
-        <Route path="/admin" element={<AdminPanel />} />
-        <Route path="/screen" element={<ScreenMain />} />
-        <Route path="/acc" element={<AcreditionSystem />} />
-        <Route path="/dj" element={<DJView />} />
-      </Routes>
+  return (<>
+      <Router>
+        <Routes>
+          <Route path="/" element={<FursuitPage />} />
+          <Route path="/hello" element={<HelloWorld />} />
+          <Route path="/auth" element={<AuthScreen />} />
+          <Route path="/admin" element={<AdminPanel />} />
+          <Route path="/screen" element={<ScreenMain />} />
+          <Route path="/acc" element={<AcreditionSystem />} />
+          <Route path="/dj" element={<DJView />} />
+          <Route path="/fursuits" element={
+            <FursuitPage />
+          } />
+        </Routes>
     </Router>
+    </>
   );
 }
 

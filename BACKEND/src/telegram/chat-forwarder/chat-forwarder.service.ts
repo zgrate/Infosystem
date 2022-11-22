@@ -1,6 +1,6 @@
-import { Injectable } from "@nestjs/common";
-import { Telegraf } from "telegraf";
-import { InjectBot } from "nestjs-telegraf";
+import { Injectable, OnApplicationBootstrap } from "@nestjs/common";
+import { Context, Telegraf } from "telegraf";
+import { Ctx, InjectBot } from "nestjs-telegraf";
 import { User } from "typegram/manage";
 import { Message } from "telegraf/typings/core/types/typegram";
 import { DbConfigService } from "../../db-config/db-config.service";
@@ -15,7 +15,7 @@ export interface ChatForwarder {
 }
 
 @Injectable()
-export class ChatForwarderService {
+export class ChatForwarderService implements OnApplicationBootstrap {
   chatForwarding: ChatForwarder[] = [];
 
   constructor(
@@ -81,10 +81,16 @@ export class ChatForwarderService {
     return false;
   }
 
-  async forwardChat(message: Message, from: User): Promise<"please_wait" | "ok" | "no_forward"> {
+  async forwardChat(
+    message: Message,
+    from: User
+  ): Promise<"please_wait" | "ok" | "no_forward"> {
     const chatForwarder = this.chatForwarding.find((it) => it.tgId == from.id);
     if (chatForwarder) {
-      if (chatForwarder.target !== "photos_chat" && Date.now() - chatForwarder.lastMessage < 500) {
+      if (
+        chatForwarder.target !== "photos_chat" &&
+        Date.now() - chatForwarder.lastMessage < 500
+      ) {
         return "please_wait";
       } else {
         await this.botService.telegram.forwardMessage(
@@ -108,4 +114,24 @@ export class ChatForwarderService {
   isForwardingChat(id: number) {
     return this.chatForwarding.findIndex((it) => it.tgId == id) !== -1;
   }
+
+  async onUpdate(@Ctx() context: Context) {
+    //TODO: Tutaj musi przekierowywać do catch-them-all, bo nie da sięmieć 2 eventów opartych na MESSAGE
+    if (
+      context.chat.type == "private" &&
+      this.isForwardingChat(context.from.id)
+    ) {
+      await this.forwardChat(context.message, context.from).then(async it => {
+        if (it == "please_wait") {
+          await context.reply("Nie tak szybko! Poczekaj 0.5 sekundy!");
+        }
+      });
+    }
+  }
+
+  onApplicationBootstrap(): any {
+    this.botService.on(["message"], (ctx) => this.onUpdate(ctx));
+  }
+
+
 }

@@ -13,6 +13,9 @@ export class CatchThemAllEntity {
   @Column()
   fursuitName: string;
 
+  @Column({ nullable: true })
+  fileName: string;
+
   @OneToMany(() => CatchThemAllCatchEntity, (it) => it.fursuit, { cascade: true })
   catched: CatchThemAllCatchEntity[];
 }

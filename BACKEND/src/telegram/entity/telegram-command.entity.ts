@@ -8,6 +8,9 @@ export class TelegramCommandEntity {
   @Column()
   command: string;
 
+  @Column({ nullable: true })
+  description: string;
+
   @Column()
   response: string;
 }

@@ -1,5 +1,6 @@
 import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
-import { TelegramService } from "./service/telegram.service";
+import { TelegramService } from "../service/telegram.service";
+
 
 @Injectable()
 export class AdminAuthorization implements CanActivate {
