@@ -28,40 +28,39 @@ export class ListenerService implements OnApplicationBootstrap {
                 await ctx.reply("Nie tak szybko! Poczekaj 0.5 sekundy!");
               }
             });
+        } else if (this.catchThemAllService.isCatching(tgUser.id)) {
+          let id = ctx.message["document"];
+          if (!id && ctx.message["video"]) {
+            id = ctx.message["video"];
+          }
+          if (!id && ctx.message["photo"]) {
+            return ctx.reply("Wyślij w pliku, nie jako zdjęcia!");
+          }
+          if (!id) {
+            return;
+          }
+          id = id["file_id"];
+          // else if(!id && ctx.message?.photo){
+          //   id = ctx.message?.photo.file_id
+          // }
+          return this.catchThemAllService
+            .uploadPhotoRecentlyCatched(tgUser.id, id)
+            .then((it) => {
+              if (it == "ok") {
+                return ctx.reply("Dodano zdjęcie!", {
+                  reply_to_message_id: ctx.message["id"]
+                });
+              } else if (it == "not_catch") {
+                return ctx.reply("Nie złapałeś jescze tego fursuita!", {
+                  reply_to_message_id: ctx.message["id"]
+                });
+              } else if (it === "error") {
+                return ctx.reply("Wystąpił błąd. Spróbuj ponownie później!", {
+                  reply_to_message_id: ctx.message["id"]
+                });
+              }
+            });
         }
-      }
-      if (this.catchThemAllService.isCatching(tgUser.id)) {
-        let id = ctx.message["document"];
-        if (!id && ctx.message["video"]) {
-          id = ctx.message["video"];
-        }
-        if (!id && ctx.message["photo"]) {
-          return ctx.reply("Wyślij w pliku, nie jako zdjęcia!");
-        }
-        if (!id) {
-          return;
-        }
-        id = id["file_id"];
-        // else if(!id && ctx.message?.photo){
-        //   id = ctx.message?.photo.file_id
-        // }
-        return this.catchThemAllService
-          .uploadPhotoRecentlyCatched(tgUser.id, id)
-          .then((it) => {
-            if (it == "ok") {
-              return ctx.reply("Dodano zdjęcie!", {
-                reply_to_message_id: ctx.message["id"]
-              });
-            } else if (it == "not_catch") {
-              return ctx.reply("Nie złapałeś jescze tego fursuita!", {
-                reply_to_message_id: ctx.message["id"]
-              });
-            } else if (it === "error") {
-              return ctx.reply("Wystąpił błąd. Spróbuj ponownie później!", {
-                reply_to_message_id: ctx.message["id"]
-              });
-            }
-          });
       }
     } catch (error) {
       handleException(error);
@@ -71,7 +70,16 @@ export class ListenerService implements OnApplicationBootstrap {
   onApplicationBootstrap(): any {
     this.logger.debug("Registering output on everything...");
     this.bot.on(
-      ["message", "document", "video", "photo", "sticker", "voice", "animation", "audio"],
+      [
+        "message",
+        "document",
+        "video",
+        "photo",
+        "sticker",
+        "voice",
+        "animation",
+        "audio"
+      ],
       (ctx) => this.onUpdate(ctx)
     );
   }

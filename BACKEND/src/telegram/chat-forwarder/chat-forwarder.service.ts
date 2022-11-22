@@ -5,6 +5,7 @@ import { User } from "typegram/manage";
 import { Message } from "telegraf/typings/core/types/typegram";
 import { DbConfigService } from "../../db-config/db-config.service";
 import { Cron } from "@nestjs/schedule";
+import { EventEmitter2, OnEvent } from "@nestjs/event-emitter";
 
 export type ChatTarget = "org" | "security" | "photos_chat";
 
@@ -20,7 +21,8 @@ export class ChatForwarderService {
 
   constructor(
     @InjectBot() private botService: Telegraf,
-    private dbConfig: DbConfigService
+    private dbConfig: DbConfigService,
+    private event: EventEmitter2
   ) {
   }
 
@@ -51,6 +53,13 @@ export class ChatForwarderService {
     }
   }
 
+  @OnEvent("catch.enable")
+  onPhotosUpload(tgId: number) {
+    if (this.isForwardingChat(tgId)) {
+      this.disableChatForward(tgId);
+    }
+  }
+
   async enableChatForward(target: ChatTarget, from: User) {
     this.disableChatForward(from.id);
     this.chatForwarding.push({
@@ -58,6 +67,7 @@ export class ChatForwarderService {
       lastMessage: Date.now(),
       target: target
     });
+    this.event.emit("forwarder.enabled", from.id);
     await this.botService.telegram.sendMessage(
       await this.dbConfig.config(
         target === "org"
@@ -66,9 +76,10 @@ export class ChatForwarderService {
             ? "photos_chat"
             : "security_chat"
       ),
-      `Użytkownik ${from.first_name} ${from.last_name} ${
-        !!from.username ? "@" + from.username : "(brak_nicku)"
-      } otworzył czat!`
+      `Użytkownik ${from.first_name} ${
+        !!from.last_name ? from.last_name : ""
+      } <a href="tg://user?id=${from.id}">oznaczenie</a> otworzył czat!`,
+      { parse_mode: "HTML" }
     );
   }
 
@@ -114,8 +125,4 @@ export class ChatForwarderService {
   isForwardingChat(id: number) {
     return this.chatForwarding.findIndex((it) => it.tgId == id) !== -1;
   }
-
-
-
-
 }

@@ -164,7 +164,7 @@ export class CatchThemAllUpdate {
         await ctx.reply(
           "Złapano " +
           status +
-          "\nAby dokończyć łapanie, wyślij przynajmniej 1 zdjęcie (w pliku) z fursuiterem."
+          "\nAby dokończyć łapanie, wyślij przynajmniej 1 zdjęcie (w pliku) z fursuiterem. Zakoncz wysyłanie /done"
         );
       }
     }

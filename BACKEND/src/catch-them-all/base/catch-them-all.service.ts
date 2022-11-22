@@ -3,6 +3,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { CatchThemAllCatchEntity, CatchThemAllEntity } from "./catch-them-all.entity";
 import { Like, Repository } from "typeorm";
 import { handleException } from "../../exception.filter";
+import { EventEmitter2, OnEvent } from "@nestjs/event-emitter";
 
 export interface RecentlyCaught {
   fursuitId: string;
@@ -19,8 +20,17 @@ export class CatchThemAllService {
     @InjectRepository(CatchThemAllEntity)
     private repository: Repository<CatchThemAllEntity>,
     @InjectRepository(CatchThemAllCatchEntity)
-    private catchesRepo: Repository<CatchThemAllCatchEntity>
+    private catchesRepo: Repository<CatchThemAllCatchEntity>,
+    private eventEmitter: EventEmitter2
   ) {
+  }
+
+
+  @OnEvent("forwarder.enabled")
+  onForwarder(id: number) {
+    if (this.isCatching(id)) {
+      this.doneCatching(id);
+    }
   }
 
   findFursuits(limit = 99999) {
@@ -28,6 +38,7 @@ export class CatchThemAllService {
       "SELECT \"fursuitName\" as \"name\", \"fileName\" as \"img\", COUNT(b.\"catchId\") as \"count\" FROM public.catch_them_all_entity a LEFT JOIN PUBLIC.catch_them_all_catch_entity b ON a.\"fursuitId\" = b.\"fursuitFursuitId\" GROUP BY a.\"fursuitId\" ORDER BY COUNT DESC LIMIT $1",
       [limit]
     );
+
 
     // return this.repository
     //   .find({
@@ -172,6 +183,7 @@ export class CatchThemAllService {
                   catchId: it.catched.find((it) => it.tgId == tgId)?.catchId,
                   catchTime: Date.now()
                 });
+                this.eventEmitter.emit("catch.enable", tgId);
                 return it.fursuitName;
               }
             })
