@@ -18,6 +18,7 @@ import { CatchThemAllModule } from "./catch-them-all/base/catch-them-all.module"
 import { DbConfigModule } from "./db-config/db-config.module";
 import { MessagesModule } from "./messages/messages.module";
 import { ChatForwarderModule } from "./telegram/chat-forwarder/chat-forwarder.module";
+import { ListenerModule } from "./telegram/main_listener/listener.module";
 
 export const TGException = (ctx, next) => {
   console.log(next);
@@ -66,7 +67,8 @@ export const TGException = (ctx, next) => {
     AccreditationModule,
     MessagesModule,
     CatchThemAllModule,
-    ChatForwarderModule
+    ChatForwarderModule,
+    ListenerModule
   ],
   controllers: [AppController],
   providers: [AppService]

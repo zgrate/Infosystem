@@ -11,6 +11,6 @@ export const FursuitPage = () => {
     alignItems: "center",
     display: "flex"
   }}>
-    <FursuitFragment />
+    <FursuitFragment limit={undefined} />
   </div>;
 };

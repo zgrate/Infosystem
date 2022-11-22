@@ -6,7 +6,8 @@ import { TelegramModule } from "../telegram.module";
 
 @Module({
   imports: [DbConfigModule, TelegramModule],
-  providers: [ChatForwarderUpdate, ChatForwarderService]
+  providers: [ChatForwarderUpdate, ChatForwarderService],
+  exports: [ChatForwarderService]
 })
 export class ChatForwarderModule {
 }

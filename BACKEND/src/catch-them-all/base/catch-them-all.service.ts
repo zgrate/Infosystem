@@ -25,7 +25,7 @@ export class CatchThemAllService {
 
   findFursuits(limit = 99999) {
     return this.repository.query(
-      "SELECT \"fursuitName\" as \"name\", \"filename\" as \"img\" COUNT(b.\"catchId\") FROM public.catch_them_all_entity a LEFT JOIN PUBLIC.catch_them_all_catch_entity b ON a.\"fursuitId\" = b.\"fursuitFursuitId\" GROUP BY a.\"fursuitId\" ORDER BY COUNT DESC LIMIT $1",
+      "SELECT \"fursuitName\" as \"name\", \"fileName\" as \"img\", COUNT(b.\"catchId\") as \"count\" FROM public.catch_them_all_entity a LEFT JOIN PUBLIC.catch_them_all_catch_entity b ON a.\"fursuitId\" = b.\"fursuitFursuitId\" GROUP BY a.\"fursuitId\" ORDER BY COUNT DESC LIMIT $1",
       [limit]
     );
 

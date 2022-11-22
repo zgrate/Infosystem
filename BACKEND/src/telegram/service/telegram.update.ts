@@ -88,7 +88,7 @@ export class TelegramUpdate implements OnModuleInit {
         "h " +
         Math.floor(minutes).toFixed(0) +
         "min"
-      );
+      ).catch(error => handleException(error));
     } else {
       await ctx.reply("Futrołajki 2022 już się rozpoczęły!");
     }

@@ -1,5 +1,5 @@
-import { Command, Ctx, On, Update } from "nestjs-telegraf";
-import { Context } from "telegraf";
+import { Command, Ctx, InjectBot, Update } from "nestjs-telegraf";
+import { Context, Telegraf } from "telegraf";
 import { CatchThemAllService } from "./catch-them-all.service";
 import { UseGuards } from "@nestjs/common";
 import { handleException } from "../../exception.filter";
@@ -9,45 +9,20 @@ import { BannedGuard } from "../../telegram/guards/banned.guard";
 import { PrivateChatGuard } from "../../telegram/guards/private-chat.guard";
 
 @Update()
-@UseGuards(BannedGuard, PrivateChatGuard)
+@UseGuards(BannedGuard)
 export class CatchThemAllUpdate {
-  constructor(private catchTheAllService: CatchThemAllService) {
+  constructor(
+    private catchTheAllService: CatchThemAllService,
+    @InjectBot() private bot: Telegraf
+  ) {
   }
 
-  @On(["document", "video", "photo", "animation"])
+  // @On(["document", "video", "photo", "animation"])
   async getDocument(@Ctx() ctx: Context<any>, @TGUser() tgUser: User) {
-    if (this.catchTheAllService.isCatching(tgUser.id)) {
-      let id = ctx.message?.document?.file_id;
-      if (!id && ctx.message?.video.file_id) {
-        id = ctx.message.video;
-      }
-      if (!id && ctx.message?.photo) {
-        return ctx.reply("Wyślij w pliku, nie jako zdjęcia!");
-      }
-      // else if(!id && ctx.message?.photo){
-      //   id = ctx.message?.photo.file_id
-      // }
-      return this.catchTheAllService
-        .uploadPhotoRecentlyCatched(tgUser.id, id)
-        .then((it) => {
-          if (it == "ok") {
-            return ctx.reply("Dodano zdjęcie!", {
-              reply_to_message_id: ctx.message.id
-            });
-          } else if (it == "not_catch") {
-            return ctx.reply("Nie złapałeś jescze tego fursuita!", {
-              reply_to_message_id: ctx.message.id
-            });
-          } else if (it === "error") {
-            return ctx.reply("Wystąpił błąd. Spróbuj ponownie później!", {
-              reply_to_message_id: ctx.message.id
-            });
-          }
-        });
-    }
   }
 
   @Command(["done", "koniec"])
+  @UseGuards(PrivateChatGuard)
   async done(@Ctx() ctx: Context<any>, @TGUser() tg: User) {
     if (this.catchTheAllService.doneCatching(tg.id) == "ok") {
       await ctx.reply("Koniec wysyłania zdjęć!");
@@ -56,7 +31,34 @@ export class CatchThemAllUpdate {
     }
   }
 
+  @Command(["catch_help", "zlap_pomoc"])
+  async catchHelp(@Ctx() ctx: Context<any>) {
+    await ctx
+      .reply(
+        "<b>W jaki sposób łapać fursuiterów?</b>\n" +
+        "Każdy fursuiter będzie miał specjalnego Badge fursuitowego (zobacz zdjęcie). W lewym górnym rogu tego badge znajduje się <b>5 znakowy kod</b> " +
+        "Ten kod należy zapisać oraz (opcjonalnie) <b>zrobić sobie zdjecie z fursuiterem</b>.\n" +
+        "Następnie za pomocą komendy /zlap łapiesz fursuitera.\n Np dla zdjęcia wpisujesz /zlap 00000\n" +
+        "System zwróci potwierdzenie i poprosi cię o wysłanie zdjęć. <b>Wyślij zdjęcia z fursuiterem w pliku lub jako wideo</b>\n" +
+        "Zakończ wysyłanie zdjęć komendą /done\n" +
+        "Możesz zobaczyć złapanych fursuiterów komendą /zlapane\n" +
+        "Jezeli chcesz dodać zdjęcia do złapanych już fursuiterów, wpisz komendę /wyslij_zdjecia nazwa_fursuita, np /wyslij_zdjecia Z-Grate\n" +
+        "Możesz też wpisać kod z badge, np /wyslij_zdjecia 00000\n" +
+        "Lista fursuiterów znajduje się pod komendą /fursuity",
+        { parse_mode: "HTML" }
+      )
+      .then(async () => {
+        await this.bot.telegram
+          .getFileLink(
+            "AgACAgQAAxkBAAEaOAdjfMX0ILbdeim8xJGGYPdP9DIL3QACs7kxG7nc4VMUrx6ZQgtf-AEAAwIAA3kAAysE"
+          )
+          .then((it) => ctx.replyWithPhoto({ url: it.toString() }));
+      })
+      .catch((error) => handleException(error));
+  }
+
   @Command(["upload", "wyslij_zdjecia"])
+  @UseGuards(PrivateChatGuard)
   async upload(@Ctx() ctx: Context<any>, @TGUser() tg: User) {
     const commands = ctx.message.text.split(" ").slice(1);
     if (commands.length === 0) {
@@ -68,7 +70,9 @@ export class CatchThemAllUpdate {
         .switchCatch(commands.join(" "), tg.id)
         .then((it) => {
           if (it === "ok") {
-            return ctx.reply("Wyślij teraz zdjęcia w pliku! Zakończ komendą /done");
+            return ctx.reply(
+              "Wyślij teraz zdjęcia w pliku! Zakończ komendą /done"
+            );
           } else if (it === "didnt_catch") {
             return ctx.reply("Nie złapałeś jeszcze tego fursuitera!");
           } else if (it === "fursuit_not_found") {
@@ -92,6 +96,7 @@ export class CatchThemAllUpdate {
   }
 
   @Command(["catched", "zlapane"])
+  @UseGuards(PrivateChatGuard)
   async getCached(@Ctx() ctx: Context<any>, @TGUser() tgUser: User) {
     return this.catchTheAllService
       .getCaughtOfUser(tgUser.id)
@@ -101,7 +106,7 @@ export class CatchThemAllUpdate {
         } else {
           await ctx.reply("Złapałeś dotychczas: " + it.join(", "));
         }
-      });
+      }).catch(error => handleException(error));
   }
 
   @Command(["fursuit_photos"])
@@ -130,16 +135,21 @@ export class CatchThemAllUpdate {
               );
             }
           }
-        });
+        }).catch(error => handleException(error));
     }
   }
 
   @Command(["catch", "zlap"])
+  @UseGuards(PrivateChatGuard)
   async catchIt(@Ctx() ctx: Context<any>, @TGUser() tgUser: User) {
     const commands = ctx.message.text.split(" ").slice(1);
     if (commands.length === 0) {
       await ctx.reply("Musisz podać przynajmniej jeden Fursuit ID!");
     } else {
+      if (commands[0] === "00000") {
+        await ctx.reply("Beep boop! Dobrze wpisałeś! :P");
+        return;
+      }
       const status = await this.catchTheAllService.catchFursuit(
         commands[0],
         tgUser.id
