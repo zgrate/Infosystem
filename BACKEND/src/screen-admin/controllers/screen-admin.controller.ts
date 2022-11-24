@@ -1,7 +1,7 @@
-import { BadRequestException, Body, Controller, Get, Post, Query } from "@nestjs/common";
-import { Admin } from "../../admin/auth/admin-auth.decorators";
+import { BadRequestException, Body, Controller, Get, Logger, Param, Post, Query } from "@nestjs/common";
+import { Admin, AdminAuth } from "../../admin/auth/admin-auth.decorators";
 import { ScreenEntity } from "../../shared/entities/screen.entity";
-import { ModeType, ScreenService } from "../../screen-main/services/screen.service";
+import { ModeType, SCREEN_REFRESH_EVENT, ScreenService } from "../../screen-main/services/screen.service";
 import { RegisterScreenDTO } from "../../admin/admin.entity";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 import { MODE_CHANGE_EVENT, ModeChangeEvent } from "../../screen-events/events/mode-change.event";
@@ -82,5 +82,20 @@ export class ScreenAdminController {
     } else {
       throw new BadRequestException("Screen not found or invalid mode");
     }
+  }
+  logger = new Logger(ScreenAdminController.name)
+
+  @Post("/refresh/:name")
+  @AdminAuth()
+  refreshSite(@Param("name") name: string) {
+    this.logger.debug("Reloading screen..." + name);
+    return this.eventEmitter
+      .emitAsync(SCREEN_REFRESH_EVENT, name)
+      .then((it) => {
+        return {
+          status: "ok",
+          response: it
+        };
+      });
   }
 }

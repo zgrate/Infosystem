@@ -19,6 +19,7 @@ import { MessagesModule } from "./messages/messages.module";
 import { ChatForwarderModule } from "./telegram/chat-forwarder/chat-forwarder.module";
 import { ListenerModule } from "./telegram/main_listener/listener.module";
 import { EntityManager } from "typeorm";
+import { StreamingHelperModule } from "./streaming-helper/streaming-helper.module";
 
 export const TGException = (ctx, next) => {
   console.log(next);
@@ -67,7 +68,8 @@ export const TGException = (ctx, next) => {
     MessagesModule,
     CatchThemAllModule,
     ChatForwarderModule,
-    ListenerModule
+    ListenerModule,
+    StreamingHelperModule
   ],
   controllers: [AppController],
   providers: [AppService]

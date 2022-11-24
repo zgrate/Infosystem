@@ -1,0 +1,144 @@
+<html>
+<head>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script>
+  window.onload = function () {
+    const data = JSON.stringify({test: "TEST"})
+    console.log(!data)
+    console.log(!data.length)
+    window.Telegram.WebApp.enableClosingConfirmation()
+    // window.Telegram.WebApp.sendData(data)
+  }
+  function isSelected(){
+    // const field = document.getElementById("other")
+    // console.log(document.getElementById("inne"))
+    document.getElementById("other").disabled = !document.getElementById("inne").checked;
+  }
+  function isEmpty(str) {
+    return !str.trim().length;
+  }
+
+
+  function sendDataToBot(){
+    const iden = document.getElementById("iden").value;
+    const name = document.getElementById("name").value;
+    const description = document.getElementById("description").value;
+    const startDate = document.getElementById("start_date").value;
+    const duration = document.getElementById("duration").value;
+    let room = document.querySelector('input[name="room"]:checked').value;
+    if(room === "inne")
+    {
+      room = document.getElementById("other").value
+    }
+    if(isEmpty(iden) || isEmpty(name) || isEmpty(description)|| isEmpty(startDate) || isEmpty(duration) || isEmpty(room)){
+      document.getElementById("error").style.display = "inherit"
+    }else {
+      const response = {
+        iden: iden,
+        name: name,
+        description: description,
+        startDate: startDate,
+        duration: duration,
+        room: room
+      }
+      console.log(response)
+      window.Telegram.WebApp.sendData(JSON.stringify(response))
+    }
+  }
+
+
+</script>
+  <style>
+      body{
+          justify-content: space-between;
+          background-color: aquamarine;
+      }
+      h4{
+          text-align: center;
+          font-size: 15px
+      }
+      div{
+          margin-top: 10px;
+          margin-bottom: 10px;
+      }
+  </style>
+</head>
+<body>
+<h4>Formularz dodawania nowego punktu programowego!</h4>
+<form id="main_form" action="">
+  <div>
+    <label for="iden">Podaj ID w systemie Foxcons:</label>
+    <input id="iden" name="iden" type="number" style="width: 50px" min="1" max="385">
+  </div>
+
+  <div>
+    <label for="name">Nazwa punktu:</label>
+    <input id="name" name="name" maxlength="50">
+  </div>
+
+  <div>
+    <label for="description">Opis punktu programu:</label>
+    <input id="description" name="description" maxlength="255">
+  </div>
+  <div>
+    <label for="start_date">Data i godzina rozpoczecia: </label>
+    <input min="2022-12-01T12:00" max="2022-12-04T12:00" id="start_date" type="datetime-local" name="start_date">
+  </div>
+  <div>
+    <label for="duration">Szac. czas trwania w minutach: </label>
+    <input id="duration" type="number" min="0" value="15" name="duration" style="width:50px"> min
+  </div>
+  <div>
+    <fieldset onclick="isSelected()">
+      <legend>Wybierz sale:</legend>
+      <div>
+        <input type="radio" id="prelekcyjna" name="room" value="prelekcyjna"
+               checked>
+        <label for="prelekcyjna">Prelekcyjna</label>
+      </div>
+
+      <div>
+        <input type="radio" id="mainstage" name="room" value="mainstage">
+        <label for="mainstage">Main Stage</label>
+      </div>
+
+      <div>
+        <input type="radio" id="stolowka" name="room" value="stolowka">
+        <label for="stolowka">Stolowka</label>
+      </div>
+
+      <div>
+        <input type="radio" id="poza_hotelem" name="room" value="poza_hotelem">
+        <label for="poza_hotelem">Poza hotelem</label>
+      </div>
+
+      <div>
+        <input type="radio" id="lobby" name="room" value="lobby">
+        <label for="lobby">Lobby</label>
+      </div>
+
+      <div>
+        <input type="radio" id="retrostrefa" name="room" value="restosrefa">
+        <label for="retrostrefa">Retrostrefa</label>
+      </div>
+
+      <div>
+        <input type="radio" id="inne" name="room" value="inne">
+        <label for="inne">Inne</label>
+        <input type="text" maxlength="50" id="other" name="room" disabled>
+      </div>
+
+    </fieldset>
+    <div id="error" style="display: none">
+      <span style="color: red;">Uzupelnij wszystkie pola!</span>
+    </div>
+    <div style="display: flex;justify-content: center;">
+      <button id="sub" onclick="sendDataToBot()" style="text-align: center">Wyslij!</button>
+    </div>
+
+  </div>
+
+</form>
+</body>
+
+</html>

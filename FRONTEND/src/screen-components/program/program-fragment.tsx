@@ -8,13 +8,22 @@ import { Col, Container, Row } from "react-bootstrap";
 
 const FormatDate = (date: string) => {
   const data = new Date(date);
-  return data.getHours().toString().padStart(2, "0") + ":" + data.getMinutes().toString().padStart(2, "0");
+  const currentTime = new Date("2022-12-01 12:00");
+  if(currentTime.getDate() === data.getDate())
+    return data.getHours().toString().padStart(2, "0") + ":" + data.getMinutes().toString().padStart(2, "0");
+  else if(Math.abs(data.getDate()-currentTime.getDate()) === 1){
+    return "Jutro, " + data.getHours().toString().padStart(2, "0") + ":" + data.getMinutes().toString().padStart(2, "0");
+  }
+  else{
+    return data.getDate().toString().padStart(2, "0")  +"-"+(data.getMonth()+1).toString().padStart(2, "0")  +", " + data.getHours().toString().padStart(2, "0") + ":" + data.getMinutes().toString().padStart(2, "0");
+
+  }
 };
 
 const GenerateTable = (props: { program: ProgramEntity[], fullWidth: boolean }) => {
   return <Container>
     <Row className={"StyleHeader"}>
-      <Col xs={2} className={"header content"}>
+      <Col xs={3} className={"header content"}>
         Godzina
       </Col>
       <Col className={"header content"}>
@@ -79,7 +88,7 @@ const TableRow = (props: { program: ProgramEntity }) => {
 
   if (props.program.eventState === "moved") {
     return <Row className={"TableRow"}>
-      <Col xs={2} className={"content"}>
+      <Col xs={3} className={"content"}>
         <span
           className={"Moved"}>{!!props.program.changeStartTime ? FormatDate(props.program.changeStartTime.toString()) : FormatDate(props.program.eventStartTime.toString())}</span>
       </Col>
@@ -93,7 +102,7 @@ const TableRow = (props: { program: ProgramEntity }) => {
     </Row>;
   } else if (props.program.eventState === "cancelled") {
     return <Row className={"TableRow"}>
-      <Col xs={2} className={"content"}>
+      <Col xs={3} className={"content"}>
         <span className={"Cancelled"}>{FormatDate(props.program.eventStartTime.toString())}</span>
       </Col>
       <Col className={"content"}>
@@ -106,7 +115,7 @@ const TableRow = (props: { program: ProgramEntity }) => {
   } else {
 
     return <Row className={"TableRow"}>
-      <Col xs={2} className={"content"}>
+      <Col xs={3} className={"content"}>
         {FormatDate(props.program.eventStartTime.toString())}
       </Col>
       <Col className={"content"}>
@@ -169,6 +178,10 @@ export const ProgramFragment = (props: { screen: ScreenEntity, socketIO: Socket 
       setLoading(true);
       setForceRefresh(false);
     }
+    if(document.body.clientHeight > window.innerHeight){
+      setProgram(program?.slice(0, -1))
+    }
+    // console.log("BUTTON " + buttonIsVisible)
     return () => {
       props.socketIO.off(PROGRAM_UPDATE_EVENT);
       clearInterval(repeating);
@@ -180,19 +193,14 @@ export const ProgramFragment = (props: { screen: ScreenEntity, socketIO: Socket 
     if (props.screen.preferredRoom != undefined) {
       return <div style={{ display: "flex", flexDirection: "row", justifyContent: "space-between", margin: 10 }}>
         <div style={{ width: "60%", margin: 5 }}>
-          <div style={{
-            marginBottom: "8px",
-            fontWeight: "bold",
-            border: "1px solid",
-            backgroundColor: "cyan"
-          }}>{capitalizeFirstLetter(props.screen.preferredRoom)}</div>
+          <div className={"PreferredRoomHeader"}>{capitalizeFirstLetter(props.screen.preferredRoom)}</div>
           <GenerateMainRoomTable
             program={program.filter(it => it.eventScheduledLocation === props.screen.preferredRoom || (it.eventState === "moved" && it.eventChangedRoom === props.screen.preferredRoom)).slice(0, props.screen.maxMainRoomEntry)}
             myRoom={props.screen.preferredRoom} />
         </div>
         <div style={{ width: "40%", margin: 5 }}>
           <div
-            style={{ marginBottom: "8px", fontWeight: "bold", border: "1px solid", backgroundColor: "aquamarine" }}>Inne
+            className={"PreferredRoomHeader"} style={{backgroundColor: "aquamarine"}}>Inne
             sale
           </div>
           <GenerateTable

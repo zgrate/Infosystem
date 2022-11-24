@@ -2,7 +2,13 @@
 /*    justify-content: flex-startjustify-content-md-center;*/
 
 /*}*/
-
+.PreferredRoomHeader {
+    margin-bottom: 8px;
+    font-weight: bold;
+    border: 1px solid;
+    background-color: cyan;
+    font-size: 3vh;
+}
 .MainRoomStyleHeader {
     background-color: deepskyblue;
 
@@ -23,7 +29,7 @@
 }
 
 .MainRoomStyleHeader > .header {
-    font-size: 25px;
+    font-size: 3.2vh;
     font-weight: bold;
 }
 
@@ -38,7 +44,9 @@
 
 .TableRow {
     background-color: lightcyan;
-    font-size: 15px
+    /*font-size: 16px*/
+    font-weight: normal;
+    font-size: 3vh
 }
 
 .TableRow > .content {
@@ -46,12 +54,13 @@
 }
 
 .StyleHeader > .header {
-    font-size: 18px;
+    font-size: 3.2vh;
     font-weight: bold;
 }
 
 .MainStyle {
     background-color: aqua;
+    font-size: 3vh;
 }
 
 .MainStyleCol {
