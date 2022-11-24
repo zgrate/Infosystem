@@ -87,4 +87,9 @@ export class AccreditationService {
       return false;
     });
   }
+
+  search(term: string) {
+    return this.accRepository.query("SELECT * FROM accreditation_entity ORDER BY similarity(\"nickname\", $1) DESC LIMIT 1", [term]);
+
+  }
 }

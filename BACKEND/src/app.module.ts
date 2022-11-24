@@ -1,4 +1,4 @@
-import { Module } from "@nestjs/common";
+import { Module, OnModuleInit } from "@nestjs/common";
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 import { TypeOrmModule } from "@nestjs/typeorm";
@@ -11,7 +11,6 @@ import { ScreenWebSocketModule } from "./screen-ws/screen-ws.module";
 import { EventEmitterModule } from "@nestjs/event-emitter";
 import { ScreenAdmin } from "./screen-admin/screen-admin.module";
 import { ProgramModule } from "./program/program.module";
-import { ScreenModesModule } from "./screen-modes/screen-modes.module";
 import { AccreditationModule } from "./accreditation/accreditation.module";
 import { TelegrafModule } from "nestjs-telegraf";
 import { CatchThemAllModule } from "./catch-them-all/base/catch-them-all.module";
@@ -19,6 +18,7 @@ import { DbConfigModule } from "./db-config/db-config.module";
 import { MessagesModule } from "./messages/messages.module";
 import { ChatForwarderModule } from "./telegram/chat-forwarder/chat-forwarder.module";
 import { ListenerModule } from "./telegram/main_listener/listener.module";
+import { EntityManager } from "typeorm";
 
 export const TGException = (ctx, next) => {
   console.log(next);
@@ -42,7 +42,7 @@ export const TGException = (ctx, next) => {
       username: process.env.DB_USER,
       password: process.env.DB_PASS,
       autoLoadEntities: true,
-      synchronize: true
+      synchronize: true,
     }),
     DbConfigModule,
     TelegrafModule.forRoot({
@@ -63,7 +63,6 @@ export const TGException = (ctx, next) => {
     ProgramModule,
     TelegramModule,
     ScreenWebSocketModule,
-    ScreenModesModule,
     AccreditationModule,
     MessagesModule,
     CatchThemAllModule,
@@ -73,6 +72,11 @@ export const TGException = (ctx, next) => {
   controllers: [AppController],
   providers: [AppService]
 })
-export class AppModule {
+export class AppModule implements OnModuleInit {
 
+  constructor(private entityManager: EntityManager) {
+  }
+  async onModuleInit() {
+    return this.entityManager.query("CREATE EXTENSION IF NOT EXISTS pg_trgm;");
+  }
 }

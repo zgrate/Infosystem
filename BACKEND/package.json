@@ -21,6 +21,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@nestjs/axios": "^1.0.0",
     "@nestjs/common": "^9.0.0",
     "@nestjs/config": "^2.2.0",
     "@nestjs/core": "^9.0.0",
@@ -33,6 +34,7 @@
     "@nestjs/schedule": "^2.1.0",
     "@nestjs/typeorm": "^9.0.1",
     "@nestjs/websockets": "^9.1.4",
+    "axios": "^1.2.0",
     "bcrypt": "^5.0.1",
     "nest-sftp": "^1.1.8",
     "nestjs-telegraf": "^2.6.2",

@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
 import { AccreditationService } from "./accreditation.service";
 import { CreateUpdateAccreditationDto } from "./dto/create-update-accreditation.dto";
 import { AccreditationGuard } from "./accreditation.guard";
@@ -40,6 +40,12 @@ export class AccreditationController {
   @Get("items/:id")
   findOne(@Param("id") id: string) {
     return this.accreditationService.findOne(+id);
+  }
+
+
+  @Get("search")
+  search(@Query("term") term: string){
+    return this.accreditationService.search(term)
   }
 
   @Patch("items/:id")

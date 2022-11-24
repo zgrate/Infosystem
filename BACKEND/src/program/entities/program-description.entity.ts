@@ -4,7 +4,7 @@ import { ProgramEntity } from "./program.entity";
 @Entity()
 export class ProgramDescriptionEntity {
   @PrimaryGeneratedColumn()
-  id: string;
+  id: number;
 
   @Column()
   lang: string;
@@ -15,6 +15,10 @@ export class ProgramDescriptionEntity {
   @Column()
   description: string;
 
-  @ManyToOne(() => ProgramEntity, { nullable: true })
+  @ManyToOne(() => ProgramEntity, {
+    nullable: true,
+    onDelete: 'CASCADE',
+    orphanedRowAction: 'delete',
+  })
   program: ProgramEntity;
 }
