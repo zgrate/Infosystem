@@ -60,4 +60,9 @@ export class ScreenController {
       return { status: "ok", result: it };
     });
   }
+
+  @Get("streams/:id")
+  async getStreamLink(@Param("id") id: string){
+    return this.dbConfig.config<string>("main-stream-link");
+  }
 }

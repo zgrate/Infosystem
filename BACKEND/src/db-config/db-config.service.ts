@@ -7,20 +7,24 @@ import { OnEvent } from "@nestjs/event-emitter";
 import { REFRESH_CACHE } from "../admin/admin.events";
 
 export type SettingsKeys =
-  | "admin-group"
-  | "photos-source"
-  | "group-chats"
-  | "admin-password"
-  | "acc-password"
-  | "main-stream-link"
-  | "tg-admins"
-  | "org_chat"
-  | "security_chat"
-  | "chat-forward-timeout"
-  | "photos_chat"
-  | "admin-message"
-  | "banned"
-  | "convention-start";
+  | 'admin-group'
+  | 'photos-source'
+  | 'group-chats'
+  | 'admin-password'
+  | 'acc-password'
+  | 'main-stream-link'
+  | 'tg-admins'
+  | 'org_chat'
+  | 'security_chat'
+  | 'chat-forward-timeout'
+  | 'photos_chat'
+  | 'admin-message'
+  | 'banned'
+  | 'convention-start'
+  | 'twitch-monitor-refresh'
+  | 'twitch-monitor-channels'
+  | 'vrcdn-monitor-refresh'
+  | 'vrcdn-monitor-channels';
 
 @Injectable()
 export class DbConfigService implements OnModuleInit {
@@ -29,9 +33,8 @@ export class DbConfigService implements OnModuleInit {
 
   constructor(
     @InjectRepository(DbConfigEntity)
-    private repository: Repository<DbConfigEntity>
-  ) {
-  }
+    private repository: Repository<DbConfigEntity>,
+  ) {}
 
   @Cron(CronExpression.EVERY_5_MINUTES)
   async refreshCache() {
@@ -40,10 +43,10 @@ export class DbConfigService implements OnModuleInit {
 
   @OnEvent(REFRESH_CACHE)
   cacheRefresh() {
-    this.logger.log("Refreshing settings....");
+    this.logger.log('Refreshing settings....');
     return this.repository.find().then((items) => {
       this.configurationsTemp = items;
-      this.logger.debug("Loaded " + items.length);
+      this.logger.debug('Loaded ' + items.length);
     });
   }
 
@@ -73,7 +76,7 @@ export class DbConfigService implements OnModuleInit {
   async saveConfig(key: SettingsKeys, value: any) {
     const k: DbConfigEntity = {
       key: key,
-      value: value
+      value: value,
     };
     return this.repository.save(k).then(() => this.cacheRefresh());
   }

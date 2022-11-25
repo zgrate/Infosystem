@@ -20,6 +20,7 @@ import { ChatForwarderModule } from "./telegram/chat-forwarder/chat-forwarder.mo
 import { ListenerModule } from "./telegram/main_listener/listener.module";
 import { EntityManager } from "typeorm";
 import { StreamingHelperModule } from "./streaming-helper/streaming-helper.module";
+import { DjModule } from "./dj/dj.module";
 
 export const TGException = (ctx, next) => {
   console.log(next);
@@ -33,10 +34,10 @@ export const TGException = (ctx, next) => {
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true
+      isGlobal: true,
     }),
     TypeOrmModule.forRoot({
-      type: "postgres",
+      type: 'postgres',
       database: process.env.DB_DB,
       host: process.env.DB_IP,
       port: +process.env.DB_PORT,
@@ -51,10 +52,9 @@ export const TGException = (ctx, next) => {
       // middlewares: [TGException],
       options: {
         telegram: {
-          testEnv: process.env.BOT_TEST_ENV === "true"
-        }
-
-      }
+          testEnv: process.env.BOT_TEST_ENV === 'true',
+        },
+      },
     }),
     ScheduleModule.forRoot(),
     EventEmitterModule.forRoot(),
@@ -69,16 +69,15 @@ export const TGException = (ctx, next) => {
     CatchThemAllModule,
     ChatForwarderModule,
     ListenerModule,
-    StreamingHelperModule
+    StreamingHelperModule,
+    DjModule,
   ],
   controllers: [AppController],
-  providers: [AppService]
+  providers: [AppService],
 })
 export class AppModule implements OnModuleInit {
-
-  constructor(private entityManager: EntityManager) {
-  }
+  constructor(private entityManager: EntityManager) {}
   async onModuleInit() {
-    return this.entityManager.query("CREATE EXTENSION IF NOT EXISTS pg_trgm;");
+    return this.entityManager.query('CREATE EXTENSION IF NOT EXISTS pg_trgm;');
   }
 }
