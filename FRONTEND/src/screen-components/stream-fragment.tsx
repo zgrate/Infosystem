@@ -19,7 +19,7 @@ export const StreamFragment = (props: { screen: ScreenEntity, socketIO: Socket }
 
   if(streamLink.endsWith(".mp4"))
   {
-      return <video autoPlay={true} loop={true} controls={false} muted={false} height={window.innerHeight-50}>
+      return <video autoPlay={true} loop={true} controls={false} muted={false} height={window.innerHeight-100}>
         <source src={streamLink} type="video/mp4"/>
       </video>
   }

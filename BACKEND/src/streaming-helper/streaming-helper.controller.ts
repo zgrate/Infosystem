@@ -5,8 +5,8 @@ import { StreamingHelperService } from "./streaming-helper.service";
 export class StreamingHelperController {
   constructor(private streamingService: StreamingHelperService) {}
 
-  @Get("restreamer")
-  getRestreamerStatus(){
-    return this.streamingService.getRestreamerStatus()
+  @Get('restreamer')
+  getRestreamerStatus() {
+    return this.streamingService.getRestreamerStatus();
   }
 }

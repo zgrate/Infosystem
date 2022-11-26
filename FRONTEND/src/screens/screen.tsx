@@ -11,15 +11,17 @@ import { StreamFragment } from "../screen-components/stream-fragment";
 import { AdminMessageFragment } from "../screen-components/admin-message.fragment";
 import { TimeFragment } from "../screen-components/time-fragment";
 
+
 export const socketIO = io(process.env.REACT_APP_API_URL!, {
   auth: {
     token: localStorage.getItem("screenId") ? localStorage.getItem("screenId") : "guest"
   },
   reconnection: true,
-  reconnectionAttempts: 999999,
   transports: ["websocket"],
   autoConnect: false
+
 });
+
 
 const PING_INTERVAL = 3000;
 const CONNECTION_TIMEOUT = 5000;
@@ -34,12 +36,12 @@ export interface MessagesWrapper {
 }
 
 
-export const DisplayFragment = (props: { mode: string, screen: ScreenEntity, socketIO: Socket }) => {
+export const DisplayFragment = (props: { mode: string, screen: ScreenEntity, socketIO: Socket, wsEnabled: boolean }) => {
 
   if (props.mode === "info") {
-    return <ProgramFragment screen={props.screen} socketIO={props.socketIO} />;
+    return <ProgramFragment wsEnabled={props.wsEnabled} screen={props.screen} socketIO={props.socketIO} />;
   } else if (props.mode === "slideshow") {
-    return <SlideshowFragment socketIO={props.socketIO} />;
+    return <SlideshowFragment wsEnabled={props.wsEnabled} socketIO={props.socketIO} />;
   } else if (props.mode === "message") {
     return <AdminMessageFragment forceReload={true} />;
   }
@@ -47,24 +49,52 @@ export const DisplayFragment = (props: { mode: string, screen: ScreenEntity, soc
   return <></>;
 };
 
-export const ScreenMain = () => {
+var indexCurrent = 0;
+var lastChange = Date.now();
+
+export const ScreenMain = (props: {wsEnabled: boolean}) => {
 
   const [screenSettings, setScreenSettings] = useState<ScreenEntity>();
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState<DisplayModeType>("connecting");
+  const [mode, setMode] = useState<DisplayModeType | string>("connecting");
   const [messages, setMessages] = useState<MessagesWrapper>();
   const [messagesLoading, setMessageLoading] = useState(false);
   const [forceMessageReload, setForceMessageReload] = useState(false);
   const [peopleMessageIndex, setPeopleMessageIndex] = useState(0);
-
+  // const { sendMessage, lastMessage, readyState } = useWebSocket(process.env.REACT_APP_API_URL!, {
+  //   shouldReconnect: (closeEvent) => true,
+  //   protocols: "websocket"
+  //   onMessage: ()
+  // });
 
 
 
 
   useEffect(() => {
-    const updateMessages = () => {
-      if (!messagesLoading && screenSettings != null) {
-        if (forceMessageReload || (screenSettings?.peopleMessages && screenSettings?.adminMessages && messages === undefined)) {
+
+    let displayChange: any = undefined;
+    if(screenSettings && screenSettings.currentDisplayMode === "change")
+    {
+      displayChange = setInterval(() => {
+        const m = screenSettings.modesQueue[indexCurrent]
+        if(isNaN(Number(m)))
+        {
+          lastChange = Date.now();
+          setMode(m);
+          indexCurrent++;
+        }
+        else if(Date.now() - lastChange > Number(m)){
+          indexCurrent++;
+        }
+        if(indexCurrent >= screenSettings.modesQueue.length){
+          indexCurrent = 0;
+        }
+
+      }, 1000)
+    }
+
+    const updateMessages = (screenSettings: ScreenEntity) => {
+        if (screenSettings?.peopleMessages && screenSettings?.adminMessages) {
           axiosService.get("messages").then((res) => {
             let admins: AdminMessageEntity[] = res.data["admin"];
             const peoples: PeopleMessageEntity[] = res.data["people"];
@@ -74,53 +104,41 @@ export const ScreenMain = () => {
               }
             }
             setMessages({ adminMessages: admins, peopleMessages: peoples });
-            setMessageLoading(false);
             lastUpdate = Date.now();
           }).catch(it => {
             console.log("Trying again  soon...");
-            setTimeout(() => setMessageLoading(false), CONNECTION_TIMEOUT);
           });
-          setMessageLoading(true);
-          setForceMessageReload(false);
-        } else if (forceMessageReload || (screenSettings?.peopleMessages && messages === undefined)) {
+        } else if ( (screenSettings?.peopleMessages)) {
           axiosService.get("messages/people").then((res) => {
             const peoples: PeopleMessageEntity[] = res.data;
             setMessages({ peopleMessages: peoples, adminMessages: undefined });
-            setMessageLoading(false);
             lastUpdate = Date.now();
           }).catch(it => {
             console.log("Trying again  soon...");
-            setTimeout(() => setMessageLoading(false), CONNECTION_TIMEOUT);
           });
-          setMessageLoading(true);
-          setForceMessageReload(false);
-        } else if (forceMessageReload || (screenSettings?.adminMessages && messages === undefined)) {
+        } else if ((screenSettings?.adminMessages)) {
           axiosService.get("messages/admin").then((res) => {
             const admins: AdminMessageEntity[] = res.data;
             setMessages({ peopleMessages: undefined, adminMessages: admins });
-
-            setMessageLoading(false);
-            setForceMessageReload(false);
             lastUpdate = Date.now();
           }).catch(it => {
             console.log("Trying again  soon...");
-            setTimeout(() => setMessageLoading(false), CONNECTION_TIMEOUT);
           });
-          setMessageLoading(true);
         }
-      }
+
     };
 
     const executeUpdate = () => {
 
       axiosService.get("/screen/info/" + localStorage.getItem("screenId"), { validateStatus: (status) => status < 500 }).then(it => {
         if (it.status > 400) {
-          console.log("TEST");
           localStorage.removeItem("screenId");
         } else {
           setScreenSettings(it.data);
           setMode(it.data.currentDisplayMode!);
-          lastUpdate = Date.now();
+          updateMessages(it.data);
+          const c = document.getElementById("footer")!
+          c.textContent = it.data.name + "Last update" + new Date().toString()
         }
         setLoading(false);
       }).catch(error => {
@@ -133,7 +151,6 @@ export const ScreenMain = () => {
         return setTimeout(() => {
           // setMode("connection_error");
           // setLoading(false);
-          console.log(it);
           if (error.status === 403) {
             localStorage.removeItem("screenId");
           }
@@ -141,53 +158,56 @@ export const ScreenMain = () => {
 
       });
 
-      setLoading(true);
+      // setLoading(true);
       //TODO: Error handling?
     };
+    var timeout: any = undefined;
+    if(props.wsEnabled) {
+      socketIO.on("connect_error", (data) => {
+        console.log("CONNECTION ERROR" + data);
+        setTimeout(() => {
+          socketIO.connect();
+        }, 5000);
+      });
 
-    socketIO.on("connect_error", (data) => {
-      console.log("CONNECTION ERROR" + data);
-      setTimeout(() => {
-        socketIO.connect();
-      }, 5000);
-    });
-
-    socketIO.on("disconnect", (erro) => {
-      disconnectTimes += 1;
-      if (disconnectTimes > 5) {
-        socketIO.disconnect();
-        socketIO.connect();
-        disconnectTimes = 0;
-      }
-      console.log(erro);
-    });
-    socketIO.on("screen.mode.change", (...args) => {
-      console.log("SCREEN MODE SCHAGNGE");
-      setMode(args[0]);
-    });
-    socketIO.on("screen.settings.update", () => {
-      executeUpdate();
-    });
-    socketIO.on("screen.messages.update", () => {
-      setForceMessageReload(true);
-    });
-    socketIO.on("pong", () => {
-      console.log("Ponged!");
-      lastPong = (Date.now());
-    });
-    socketIO.on("screen.refresh", () => {
-      window.location.reload();
-    });
-    const timeout = setInterval(() => {
-      if (Date.now() - lastPong > PING_INTERVAL * 2) {
-        socketIO.disconnect();
-        socketIO.connect();
+      // socketIO.on("disconnect", (erro) => {
+      //   disconnectTimes += 1;
+      //   if (disconnectTimes > 5) {
+      //     socketIO.disconnect();
+      //     socketIO.connect();
+      //     disconnectTimes = 0;
+      //   }
+      //   console.log(erro);
+      // });
+      socketIO.on("screen.mode.change", (...args) => {
+        console.log("SCREEN MODE SCHAGNGE");
+        setMode(args[0]);
+      });
+      socketIO.on("screen.settings.update", () => {
+        executeUpdate();
+      });
+      socketIO.on("screen.messages.update", () => {
+        setForceMessageReload(true);
+      });
+      socketIO.on("pong", () => {
+        console.log("Ponged!");
         lastPong = (Date.now());
-      } else {
-        socketIO.emit("ping");
-      }
-    }, PING_INTERVAL);
-
+      });
+      socketIO.on("screen.refresh", () => {
+        window.location.reload();
+      });
+      timeout = setInterval(() => {
+        if (Date.now() - lastPong > PING_INTERVAL * 2) {
+          socketIO.disconnect();
+          socketIO.connect();
+          lastPong = (Date.now());
+        } else {
+          socketIO.emit("ping");
+        }
+      }, PING_INTERVAL);
+      socketIO.disconnect();
+      socketIO.connect();
+    }
     const peopleMessageTimeout = setInterval(() => {
       if (screenSettings && Date.now() - lastMessageChange > screenSettings?.peopleMessageRotate && screenSettings.peopleMessages && messages?.peopleMessages && messages.peopleMessages.length > 0) {
         lastMessageChange = Date.now();
@@ -200,19 +220,23 @@ export const ScreenMain = () => {
       }
     }, 1000);
 
-    socketIO.connect();
 
-    updateMessages();
 
     if (screenSettings === undefined) {
-      if (!loading) {
         executeUpdate();
-      }
     }
 
+
+    const autoRepeat = setInterval(()=>{
+      executeUpdate();
+    }, props.wsEnabled ? 60000 : 30000)
+
+
     return () => {
-      clearInterval(timeout);
+      timeout && clearInterval(timeout);
       clearInterval(peopleMessageTimeout);
+      clearInterval(autoRepeat);
+      displayChange && clearInterval(displayChange);
       socketIO.off("connect_error");
       socketIO.off("disconnect");
       socketIO.off("screen.mode.change");
@@ -247,13 +271,13 @@ export const ScreenMain = () => {
     return <div className="App">
       <TimeFragment/>
       <ShowMessage message={messages?.peopleMessages?.[peopleMessageIndex]} />
-      <DisplayFragment mode={mode} screen={screenSettings!!} socketIO={socketIO} />
+      <DisplayFragment wsEnabled={props.wsEnabled} mode={mode} screen={screenSettings!!} socketIO={socketIO} />
       {/*<AllScheduleView rows={rows}/>*/}
       {/*<StreamView streamLink={"https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8"} playerStyle={{}} />*/}
       <div className="Footer">
         {getMarqueeOrg(messages?.adminMessages)}
       </div>
-      <div style={{ fontSize: "15px" }}>{screenSettings?.name} Last
+      <div id={"footer"} style={{ fontSize: "15px" }}>{screenSettings?.name} Last
         update {new Date(lastMessageChange).toString()}</div>
     </div>;
   }

@@ -1,5 +1,10 @@
 import { Column, Entity, PrimaryColumn } from "typeorm";
 
+export interface ModeQueue{
+  mode: string;
+  switchToNext: number;
+}
+
 @Entity()
 export class ScreenEntity {
   @PrimaryColumn()
@@ -8,19 +13,19 @@ export class ScreenEntity {
   name: string;
   @Column()
   lastIp: string;
-  @Column({ default: "pl" })
+  @Column({ default: 'pl' })
   language: string;
   @Column()
   authKey: string;
   @Column({ default: false })
   isConnected: boolean;
-  @Column({ default: "info" })
+  @Column({ default: 'info' })
   currentDisplayMode: string;
   @Column({ nullable: true })
   lastConnection: Date;
   @Column({ default: false })
   isRegistered: boolean;
-  @Column("simple-array", { default: "" })
+  @Column('simple-array', { default: '' })
   lockedModes: string[];
   @Column({ nullable: true })
   preferredRoom: string;
@@ -34,4 +39,7 @@ export class ScreenEntity {
   maxMainRoomEntry: number;
   @Column({ default: 10 })
   maxOtherRoomEntry: number;
+  @Column('simple-array', {default: ''} )
+  modesQueue: string[];
+
 }

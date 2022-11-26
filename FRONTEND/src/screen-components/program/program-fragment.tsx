@@ -154,30 +154,37 @@ const EmptyRow = () => {
   </Row>;
 };
 
-export const ProgramFragment = (props: { screen: ScreenEntity, socketIO: Socket }) => {
+export const ProgramFragment = (props: { wsEnabled: boolean, screen: ScreenEntity, socketIO: Socket }) => {
   const [program, setProgram] = useState<ProgramEntity[]>();
   const [loading, setLoading] = useState(false);
   const [forceRefresh, setForceRefresh] = useState(false);
   useEffect(() => {
-    props.socketIO.on(PROGRAM_UPDATE_EVENT, () => {
-      setForceRefresh(true);
-    });
-    const repeating = setInterval(() => {
-      setForceRefresh(true);
-    }, 300000);
-    if (program === undefined && !loading) {
-      setForceRefresh(true);
-    }
-    if (forceRefresh) {
+
+    const refreshProgram = () => {
+      console.log("REFRESHING")
       axiosService.get("program/screen").then(it => {
+        // console.log(it)
         if (it.data) {
           setProgram(it.data["program"]);
         }
-        setLoading(false);
       });
-      setLoading(true);
-      setForceRefresh(false);
     }
+    if(program === undefined)
+      refreshProgram();
+
+
+    if(props.wsEnabled) {
+      props.socketIO.on(PROGRAM_UPDATE_EVENT, () => {
+        refreshProgram();
+      });
+    }
+    const repeating = setInterval(() => {
+      refreshProgram();
+    }, props.wsEnabled ? 300000 : 30000);
+    // if (program === undefined && !loading) {
+    //   setForceRefresh(true);
+    // }
+
     if(document.body.clientHeight > window.innerHeight){
       setProgram(program?.slice(0, -1))
     }
@@ -186,8 +193,8 @@ export const ProgramFragment = (props: { screen: ScreenEntity, socketIO: Socket 
       props.socketIO.off(PROGRAM_UPDATE_EVENT);
       clearInterval(repeating);
     };
-  }, [forceRefresh, loading, program, props.socketIO]);
-  if (program === undefined || forceRefresh) {
+  }, [program, props.socketIO]);
+  if (program === undefined) {
     return <div> Ładowanie programu... </div>;
   } else {
     if (props.screen.preferredRoom != undefined) {
@@ -204,7 +211,7 @@ export const ProgramFragment = (props: { screen: ScreenEntity, socketIO: Socket 
             sale
           </div>
           <GenerateTable
-            program={program.filter(it => it.eventScheduledLocation !== props.screen.preferredRoom && (it.eventState !== "moved" && it.eventScheduledLocation !== props.screen.preferredRoom)).slice(0, props.screen.maxOtherRoomEntry)}
+            program={program.filter(it => it.eventScheduledLocation !== props.screen.preferredRoom || (it.eventState !== "moved" && it.eventScheduledLocation !== props.screen.preferredRoom)).slice(0, props.screen.maxOtherRoomEntry)}
             fullWidth={false} />
         </div>
       </div>;

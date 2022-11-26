@@ -18,7 +18,8 @@ function App() {
           <Route path="/hello" element={<HelloWorld />} />
           <Route path="/auth" element={<AuthScreen />} />
           <Route path="/admin" element={<AdminPanel />} />
-          <Route path="/screen" element={<ScreenMain />} />
+          <Route path="/wsscreen" element={<ScreenMain wsEnabled={true} />} />
+          <Route path="/screen" element={<ScreenMain wsEnabled={false} />} />
           <Route path="/acc" element={<AcreditionSystem />} />
           <Route path="/dj" element={<DJView />} />
           <Route path="/fursuits" element={

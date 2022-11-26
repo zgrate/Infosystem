@@ -2,18 +2,43 @@ import { Injectable, Logger } from "@nestjs/common";
 import { HttpService } from "@nestjs/axios";
 import { handleException } from "../exception.filter";
 import { Cron } from "@nestjs/schedule";
+import { DbConfigService } from "../db-config/db-config.service";
+import { ChildProcessWithoutNullStreams, spawn } from "child_process";
 
 @Injectable()
 export class StreamingHelperService {
-  constructor(private httpService: HttpService) {}
-  logger = new Logger(StreamingHelperService.name);
-  tokenRefresh = undefined;
+  private logger = new Logger(StreamingHelperService.name);
+  constructor(
+    private httpService: HttpService,
+    private dbConfig: DbConfigService,
+  ) {}
 
-  @Cron('*/2 * * * * *')
-  async cronCheck(){
-    
+  private tokenRefresh = undefined;
+  private ffmpegProcess: ChildProcessWithoutNullStreams = undefined;
+
+  private startProcess() {
+    if (!this.ffmpegProcess) {
+      this.ffmpegProcess = spawn('ffmpeg', ['-version']);
+      this.ffmpegProcess.stdout.on('data', (it) => {
+        this.logger.verbose(it);
+      });
+      this.ffmpegProcess.stderr.on('data', (it) => {
+        this.logger.error(it);
+      });
+      this.ffmpegProcess.on('exit', () => {
+        this.ffmpegProcess = undefined;
+      });
+    }
   }
 
+  private stopProcess() {
+    if (this.ffmpegProcess) {
+      this.ffmpegProcess.kill();
+    }
+  }
+
+  @Cron('*/2 * * * * *')
+  async cronCheck() {}
 
   async refreshToken() {
     return (

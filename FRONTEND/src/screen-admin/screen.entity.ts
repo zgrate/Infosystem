@@ -6,7 +6,7 @@ export interface ScreenEntity {
   language: string;
   authKey: string;
   isConnected: boolean;
-  currentDisplayMode: DisplayModeType;
+  currentDisplayMode: DisplayModeType | string;
   lastConnection: Date;
   isRegistered: boolean;
   lockedModes: string[];
@@ -16,9 +16,10 @@ export interface ScreenEntity {
   peopleMessageRotate: number;
   maxMainRoomEntry: number;
   maxOtherRoomEntry: number;
+  modesQueue: string[];
 }
 
-export type DisplayModeType = "connection_error" | "connecting" | "program" | "info" | "stream" | "document";
+export type DisplayModeType = "connection_error" | "connecting" | "program" | "info" | "stream" | "message" | "change";
 
 export interface AdminMessageEntity {
   id: number;

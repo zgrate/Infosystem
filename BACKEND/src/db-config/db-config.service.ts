@@ -24,7 +24,11 @@ export type SettingsKeys =
   | 'twitch-monitor-refresh'
   | 'twitch-monitor-channels'
   | 'vrcdn-monitor-refresh'
-  | 'vrcdn-monitor-channels';
+  | 'vrcdn-monitor-channels'
+  | 'restreamer-ffmpeg-command'
+  | 'restreamer-auto-timeout'
+  | 'photo-forward-group'
+  | 'photos-change-time';
 
 @Injectable()
 export class DbConfigService implements OnModuleInit {
@@ -48,6 +52,14 @@ export class DbConfigService implements OnModuleInit {
       this.configurationsTemp = items;
       this.logger.debug('Loaded ' + items.length);
     });
+  }
+
+  configSync<T>(key: SettingsKeys, defaultValue: T = undefined):T {
+    const a = this.configurationsTemp.find((it) => it.key == key);
+    if (a !== undefined) {
+      return a.value;
+    }
+    return defaultValue;
   }
 
   async config<T>(key: SettingsKeys, defaultValue: T = undefined): Promise<T> {

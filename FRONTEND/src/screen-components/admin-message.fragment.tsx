@@ -6,20 +6,18 @@ import { axiosService } from "../services/AxiosService";
 export const AdminMessageFragment = (props: { forceReload: boolean }) => {
   const [message, setMessage] = useState(undefined);
   const [loading, setLoading] = useState(false);
-  const loadMessages = () => {
-    axiosService.get("/screen/message").then(it => {
-      if (it.data) {
-        setMessage(it.data["result"]);
-      }
-      setLoading(false);
-    });
-    setLoading(true);
-  };
+
+
   useEffect(() => {
+    const loadMessages = () => {
+      axiosService.get("/screen/message").then(it => {
+        if (it.data) {
+          setMessage(it.data["result"]);
+        }
+      });
+    };
     if (message === undefined) {
-      if (!loading) {
         loadMessages();
-      }
     }
     const timer = setInterval(() => {
       loadMessages();
@@ -27,11 +25,11 @@ export const AdminMessageFragment = (props: { forceReload: boolean }) => {
     return () => {
       clearInterval(timer);
     };
-  }, [message, loading]);
+  }, [message]);
   if (message === undefined) {
     return <div>Ładowanie...</div>;
   } else {
-    return <div style={{ border: "1px solid", margin: "20px", fontSize: "initial" }}>
+    return <div style={{ border: "1px solid", margin: "20px", fontSize: "initial", backgroundColor: "white" }}>
       <ReactMarkdown children={message} />
     </div>;
   }

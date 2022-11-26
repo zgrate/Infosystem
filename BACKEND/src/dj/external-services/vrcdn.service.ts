@@ -27,16 +27,15 @@ export class VrcdnService {
     private dbConfig: DbConfigService,
   ) {}
 
-  private logger = new Logger(VrcdnService.name)
+  private logger = new Logger(VrcdnService.name);
   private lastCacheRefresh = 0;
   private vrcdnCache: VRCDNStats[];
 
   @Cron(CronExpression.EVERY_5_SECONDS)
   refreshVRCDNStats() {
-
     return this.dbConfig.config<number>('vrcdn-monitor-refresh').then((it) => {
       if (Date.now() - this.lastCacheRefresh > it) {
-        this.logger.debug("Refreshing VRCDN")
+        this.logger.debug('Refreshing VRCDN');
         this.lastCacheRefresh = Date.now();
         return this.dbConfig
           .config<string[]>('vrcdn-monitor-channels')
@@ -76,7 +75,7 @@ export class VrcdnService {
       .then((it) => it?.data);
   }
 
-  getVRCDNViewers(){
+  getVRCDNViewers() {
     return this.vrcdnCache;
   }
 }

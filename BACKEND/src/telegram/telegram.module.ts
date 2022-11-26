@@ -15,7 +15,6 @@ import { AuthorisedTgUserEntity } from "./entity/authorised-tg-user.entity";
   providers: [TelegramUpdate, TelegramService, TelegramCommandsUpdate],
   // controllers: [TelegramUpdate]
   // providers: [],
-  exports: [TelegramService]
+  exports: [TelegramService],
 })
-export class TelegramModule {
-}
+export class TelegramModule {}

@@ -44,15 +44,25 @@ export class ScreenWsGateway
   }
 
   @SubscribeMessage("ping")
-  handleEvent(client: Socket) {
+  async handleEvent(client: Socket) {
+    const token =
+      client.handshake.auth?.token || client.handshake.headers.authorization;
     const conn = this.clients.find((conn) => conn.socketId == client.id);
     if (conn == undefined) {
       this.logger.debug("Emm... client not found? Do something?");
-      client.disconnect();
+      const screen = await this.screenService.getScreenByID(token);
+      if(screen != null){
+        this.clients = this.clients.filter(it => it.screen.name !== screen.name)
+        this.clients.push(new ConnectedClient(client.id, screen, client))
+      }else{
+        client.disconnect()
+      }
+
     } else {
       this.logger.debug("Ping from " + conn.screen.name);
-      client.emit("pong");
     }
+    client.emit("pong");
+
   }
 
   @OnEvent(MESSAGE_UPDATE_EVENT)
@@ -93,7 +103,9 @@ export class ScreenWsGateway
       this.clients.forEach((x) => x.socket.emit(SCREEN_REFRESH_EVENT));
       return true;
     } else {
-      this.logger.debug(this.clients.map(it => it.socketId + " " + it.screen.id));
+      this.logger.debug(
+        this.clients.map((it) => it.socketId + ' ' + it.screen.id),
+      );
       const connected = this.clients.filter((it) => it.screen.name === name);
       if (connected.length > 0) {
         connected.forEach(it => it.socket.emit(SCREEN_REFRESH_EVENT));
@@ -113,17 +125,18 @@ export class ScreenWsGateway
         client.disconnect();
         return new UnauthorizedException();
       } else {
-        const c = this.clients.find((conn) => conn.screen.id == screen.id);
-        if (c !== undefined) {
-          this.logger.debug("Killing old screen connection!");
-          c.socket.disconnect();
-          const index = this.clients.findIndex(it => it.socketId == client.id);
-          if (index !== -1)
-            this.clients.splice(index, 1);
-        }
-        this.logger.debug(screen.name + " connected to the gateway!");
-        this.clients.push(new ConnectedClient(client.id, screen, client));
-        return this.screenService.connect(screen.id);
+        this.logger.log(`Screen ${screen.name} Connected!`)
+        // const c = this.clients.find((conn) => conn.screen.id == screen.id);
+        // if (c !== undefined) {
+        //   this.logger.debug("Killing old screen connection!");
+        //   c.socket.disconnect();
+        //   const index = this.clients.findIndex(it => it.socketId == client.id);
+        //   if (index !== -1)
+        //     this.clients.splice(index, 1);
+        // }
+        // this.logger.debug(screen.name + " connected to the gateway!");
+        // this.clients.push(new ConnectedClient(client.id, screen, client));
+        // return this.screenService.connect(screen.id);
       }
     } else {
       client.disconnect();
