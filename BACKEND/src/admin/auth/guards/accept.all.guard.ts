@@ -18,7 +18,7 @@ export class AcceptGuard implements CanActivate {
     if (
       request.headers["authorization"] ==
       "Bearer " + this.adminAuthService.authKey ||
-      await bcrypt.compare(request.headers["authorization"].replace("Bearer ", ""), this.adminAuthService.adminPassword)
+      await bcrypt.compare(request.headers["authorization"]?.replace("Bearer ", ""), this.adminAuthService.adminPassword)
     ) {
       return this.adminService.findAdmin("admin").then((it) => {
         const { password, ...result } = it;

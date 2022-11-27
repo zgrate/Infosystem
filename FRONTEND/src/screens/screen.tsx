@@ -10,6 +10,7 @@ import { SlideshowFragment } from "../screen-components/program/slideshow.fragme
 import { StreamFragment } from "../screen-components/stream-fragment";
 import { AdminMessageFragment } from "../screen-components/admin-message.fragment";
 import { TimeFragment } from "../screen-components/time-fragment";
+import { FursuitFragment } from "../fursuits/fursuit.fragment";
 
 
 export const socketIO = io(process.env.REACT_APP_API_URL!, {
@@ -44,6 +45,8 @@ export const DisplayFragment = (props: { mode: string, screen: ScreenEntity, soc
     return <SlideshowFragment wsEnabled={props.wsEnabled} socketIO={props.socketIO} />;
   } else if (props.mode === "message") {
     return <AdminMessageFragment forceReload={true} />;
+  } else if (props.mode === "fursuit"){
+    return <div style={{width: "50%", marginLeft: "auto", marginRight: "auto"}}><FursuitFragment limit={10}/> </div>
   }
 
   return <></>;

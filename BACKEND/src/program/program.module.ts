@@ -13,6 +13,7 @@ import { ScreenModule } from "../screen-main/screen.module";
 import { FoxconsIntegrationService } from "./integrations/foxcons-integration/foxcons-integration.service";
 import { HttpModule } from "@nestjs/axios";
 import { FoxconsIntegrationController } from "./integrations/foxcons-integration/foxcons-integration.controller";
+import { DbConfigModule } from "../db-config/db-config.module";
 
 const ProgramSourceProvider = {
   provide: ProgramIntegrationInterface,
@@ -27,6 +28,7 @@ const ProgramSourceProvider = {
     AdminMainModule,
     ScreenModule,
     HttpModule,
+    DbConfigModule
   ],
   controllers: [ProgramController, FoxconsIntegrationController],
   providers: [

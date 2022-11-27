@@ -17,8 +17,8 @@ const fursuit = [
 
 const FursuitRow = (props: { fursuitIns: any }) => {
   return <Row style={{ marginBottom: "5px" }}>
-    <Col style={{ width: "fit-content" }}>
-      <Image src={props.fursuitIns["img"]} width={"100x"} />
+    <Col style={{backgroundColor: "lightblue", width: "fit-content" }}>
+      <Image src={props.fursuitIns["img"]} width={"70x"} />
     </Col>
     <Col className={"CenterAlign"} style={{ backgroundColor: "lightblue", fontSize: "2vw" }}>
       {props.fursuitIns["name"]}
@@ -32,23 +32,28 @@ const FursuitRow = (props: { fursuitIns: any }) => {
 
 export const FursuitFragment = (props: { limit: number | undefined }) => {
 
-  const [fursuit, setFursuit] = useState([]);
-
-  const getData = async (limit: number | undefined) => {
-    if (limit === undefined) {
-      try {
-        const fursuits = (await axiosService.get("/catch/fursuits")).data;
-        setFursuit(fursuits);
-      } catch (e) {
-        console.log("Wystąpił bład!");
-      }
-    }
-  };
+  const [fursuit, setFursuit] = useState<any[] | undefined>(undefined);
 
   useEffect(() => {
-    getData(props.limit);
-  }, [props.limit]);
+    const getData = () => {
+      axiosService.get("/catch/fursuits?limit="+ props.limit).then(it=>{
+            setFursuit(it.data);
+      })
+    };
+    if(!fursuit){
+      getData();
+    }
+    else {
+      if (document.body.clientHeight > window.innerHeight) {
+        setFursuit(fursuit?.slice(0, -1))
+      }
+    }
+  }, [fursuit, props.limit]);
 
+  if(!fursuit)
+  {
+    return <>Ładowanie....</>
+  }
 
   return <Container>
     <Row style={{ marginBottom: "5px" }}>

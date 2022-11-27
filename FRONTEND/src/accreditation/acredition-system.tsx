@@ -1,9 +1,10 @@
 import { Box } from "@mantine/core";
 import { Container, Image, Row } from "react-bootstrap";
-import React, { RefObject, useRef, useState } from "react";
+import React, { RefObject, useCallback, useEffect, useRef, useState } from "react";
 import { RegisteredAcc } from "./accredition";
 import { axiosService } from "../services/AxiosService";
 import { toast } from "react-toastify";
+import debounce from "lodash.debounce";
 
 // export interface RegisteredAcc {
 //   id: string;
@@ -22,7 +23,7 @@ import { toast } from "react-toastify";
 // }
 
 export interface PartialAccreditation {
-  id: string;
+  id: number;
   nickname: string;
   name: string;
   surname: string;
@@ -148,11 +149,11 @@ export const ShowBadge = (props: { acc: RegisteredAcc, checkInKey: (id: number) 
   const img = "https://res.futrolajki.pl/badge/" + props.acc.id + ".jpg";
   return (
     <>
-      <div style={{ fontSize: "3vh", display: "flex", flexDirection: "row", justifyContent: "center", margin: "20px" }}>
+      <div style={{ fontSize: "1em", display: "flex", flexDirection: "row", justifyContent: "center", margin: "20px" }}>
         <div>
           <Image style={{ position: "sticky" }} height={"400px"} src={img} />
         </div>
-        <div style={{ margin: "30px" }}>
+        <div style={{ marginLeft: "30px", backgroundColor: "aquamarine"}}>
           <CheckIn checkIn={props.acc.checkIn} />
           <CheckForKeys acc={props.acc} />
           <TypeInfo acc={props.acc} />
@@ -228,32 +229,28 @@ export const InternalAccreditationSystem = (params: { inputRef: RefObject<HTMLIn
   const [loading, setLoading] = useState(false);
 
   const f = params.filter.toLowerCase();
-
   const filteredList = params.accounts.filter((it) => (it.name.toLowerCase() + " " + it.surname.toLowerCase()).includes(f) || it.nickname.toLowerCase().includes(f) || it.name.toLowerCase().includes(f) || it.surname.toLowerCase().includes(f) || it.id.toString() === (f));
+
+  useEffect(() =>{
+    if(filteredList.length === 1 && (badge === undefined || filteredList[0].id !== badge.id)){
+      axiosService.get("accreditation/items/" + filteredList[0].id).then((bdg) => {
+        setBadge(bdg.data);
+      });
+    }
+  })
   if (filteredList.length === 1) {
     if (badge === undefined) {
-      if (!loading) {
-        axiosService.get("accreditation/items/" + filteredList[0].id).then((bdg) => {
-          setBadge(bdg.data);
-          setLoading(false);
-        });
-        setLoading(true);
-      }
       return <div>LOADING</div>;
     } else {
       return <>
         <ShowBadge acc={badge} checkInKey={(id) => {
-          console.log("TEST");
           axiosService.post("accreditation/checkin/" + id).then(it => {
-            setLoading(false);
             if (it.data) {
               params.setFilter("");
             } else {
               toast("Check in error! Try Again...");
             }
           });
-          setLoading(true);
-
         }
         } />
       </>;
@@ -285,6 +282,29 @@ export const AcreditionSystem = () => {
 
   const passwordRef = useRef<HTMLInputElement>(null);
 
+  const debouncedChangeHandler = useCallback(
+    debounce(()=>{
+      setCurrentFilter(inputRef.current!.value)
+    }, 350)
+    , [inputRef]);
+
+  useEffect(() => {
+
+    const refreshData = () => {
+      axiosService.get("/accreditation/items").then((response) => {
+        setAccounts(response.data);
+      }).catch(it => setError(true));
+    }
+
+    if(password){
+      refreshData()
+    }
+
+    return ()=>{
+      debouncedChangeHandler.cancel()
+    }
+  }, [password])
+
   if (error) {
     return <div>INVALID PASSWORD,REFRESH THE SITE</div>;
   }
@@ -294,11 +314,14 @@ export const AcreditionSystem = () => {
       <div>
         <b style={{ fontSize: "5vh" }}>SYSTEM AKREDYTACJI FUTROŁAJKI 2022</b>
       </div>
-      <input ref={inputRef} value={currentFilter} type="text" height={"5vh"}
+      <input ref={inputRef} type="text" height={"5vh"}
              style={{ height: "5vh", fontSize: "2vh", width: "40vw" }}
-             onChange={(e) => setCurrentFilter(e.target.value)}
+             onChange={(e) =>
+             {
+               debouncedChangeHandler()
+             }}
              onKeyDown={(e) => {
-               console.log(e.key);
+
                if (e.key === "enter")
                  setCurrentFilter(inputRef.current!.value);
              }
@@ -306,7 +329,7 @@ export const AcreditionSystem = () => {
 
       />
       <InternalAccreditationSystem setFilter={(it) => {
-        console.log("E");
+
         setCurrentFilter(it);
       }
       } inputRef={inputRef} filter={currentFilter} accounts={accounts} />
@@ -321,9 +344,6 @@ export const AcreditionSystem = () => {
       <button onClick={() => {
         setPassword(passwordRef.current!.value);
         axiosService.defaults.headers.common["Authorization"] = "Bearer " + passwordRef.current!.value;
-        axiosService.get("/accreditation/items").then((response) => {
-          setAccounts(response.data);
-        }).catch(it => setError(true));
       }
       }>ACCEPT
       </button>

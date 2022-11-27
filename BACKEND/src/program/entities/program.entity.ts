@@ -29,20 +29,20 @@ export type EventType =
 //   PRIVATE_NO_DURATION = 'private_no_duration', //Event hidden, and without duration
 // }
 
- export type EventSourceType = "external" | "internal";
+export type EventSourceType = 'schedule' | 'activity';
 
 @Entity()
 export class ProgramEntity {
   @PrimaryGeneratedColumn()
   internalId: number;
 
-  @Column({nullable: true})
+  @Column({ nullable: true })
   externalId: number;
 
   @OneToMany(() => ProgramDescriptionEntity, (program) => program.program, {
     nullable: true,
-    cascade: ["remove", "insert", "update"],
-    eager: true
+    cascade: ['remove', 'insert', 'update'],
+    eager: true,
   })
   translations: ProgramDescriptionEntity[];
 
@@ -82,6 +82,6 @@ export class ProgramEntity {
   @Column('simple-array', { nullable: true })
   coLeaders: number[];
 
-  @Column({default: "internal"})
-  programSource: EventSourceType;
+  @Column()
+  programType: EventSourceType;
 }

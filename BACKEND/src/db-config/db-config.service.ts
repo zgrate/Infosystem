@@ -28,7 +28,9 @@ export type SettingsKeys =
   | 'restreamer-ffmpeg-command'
   | 'restreamer-auto-timeout'
   | 'photo-forward-group'
-  | 'photos-change-time';
+  | 'photos-change-time'
+  | 'activity-color'
+  | 'fursuits-link';
 
 @Injectable()
 export class DbConfigService implements OnModuleInit {

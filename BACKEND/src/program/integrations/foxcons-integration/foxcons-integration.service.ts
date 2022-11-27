@@ -1,13 +1,14 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { ProgramFilter, ProgramIntegrationInterface } from "../program-integration.interface";
-import { ProgramEntity } from "../../entities/program.entity";
+import { PROGRAM_ACCEPTED_EVENT, ProgramEntity } from "../../entities/program.entity";
 import { HttpService } from "@nestjs/axios";
 import { AdminEventDTO } from "src/program/entities/admin-event.dto";
 import { HallDto } from "./dto/hall.dto";
 import { handleException } from "../../../exception.filter";
-import { EventEmitter2 } from "@nestjs/event-emitter";
+import { EventEmitter2, OnEvent } from "@nestjs/event-emitter";
 import { ScheduleDto } from "./dto/schedule.dto";
 import { AxiosError } from "axios";
+import { DbConfigService } from "../../../db-config/db-config.service";
 
 @Injectable()
 export class FoxconsIntegrationService extends ProgramIntegrationInterface {
@@ -15,6 +16,7 @@ export class FoxconsIntegrationService extends ProgramIntegrationInterface {
   constructor(
     private httpService: HttpService,
     private eventEmmiter: EventEmitter2,
+    private dbConfig: DbConfigService,
   ) {
     super();
     this.httpService.axiosRef.defaults.baseURL = process.env.FOXCONS_API_URL;
@@ -86,7 +88,7 @@ export class FoxconsIntegrationService extends ProgramIntegrationInterface {
             changeStartTime: undefined,
             eventChangedRoom: undefined,
             internalId: undefined,
-            programSource: 'external',
+            programType: 'schedule',
             translations: [
               {
                 program: undefined,
@@ -200,7 +202,7 @@ export class FoxconsIntegrationService extends ProgramIntegrationInterface {
           details: adminEventDTO.description,
         },
       ],
-      overrideColor: adminEventDTO.color
+      overrideColor: adminEventDTO.color,
     };
     if (addComment) {
       schedule['editionComment'] = 'Z-Grate System Update';
@@ -253,6 +255,61 @@ export class FoxconsIntegrationService extends ProgramIntegrationInterface {
         handleException(error);
         return error.status + ' ' + JSON.stringify(error.response.data);
       });
+  }
+
+  async programEntityToFoxconsDTO(programEntity: ProgramEntity) {
+    const halls = await this.listHalls();
+    if (halls == 'error' || halls == 'unautorized') return undefined;
+    let roomID = halls.find(
+      (it) =>
+        it.name == programEntity.eventScheduledLocation ||
+        it.texts.some(
+          (it) => it.translatedName == programEntity.eventScheduledLocation,
+        ),
+    )?.id;
+    if (!roomID) {
+      roomID = halls.find((it) => it.name == 'activity-room').id;
+    }
+    console.log(programEntity);
+    const schedule: ScheduleDto = {
+      id: undefined,
+      attendanceType: 'everyone',
+      canBeExtended: false,
+      displayTarget: 'everywhere',
+      hallId: roomID, //TODO,
+      helpers: [26],
+      leaderId: programEntity.userId,
+      subLeaders: [],
+      timeBegin: programEntity.eventStartTime.toString(),
+      timeEnd: programEntity.eventEndTime.toString(),
+      visibilityLevel: 'always',
+      is18Plus: false,
+      isDraft: false,
+      name: programEntity.translations[0].title,
+      duration: this.timeDiff(
+        programEntity.eventStartTime.toString(),
+        programEntity.eventEndTime.toString(),
+      ),
+      durationEstimate: this.timeDiff(
+        programEntity.eventStartTime.toString(),
+        programEntity.eventEndTime.toString(),
+      ),
+      details: [
+        {
+          lang: 'PL',
+          displayName: programEntity.translations[0].title,
+          details: programEntity.translations[0].description,
+        },
+      ],
+      overrideColor: this.dbConfig.configSync('activity-color'),
+    };
+    return schedule;
+  }
+
+  @OnEvent(PROGRAM_ACCEPTED_EVENT)
+  programAcceptedEvent(programEntity: ProgramEntity) {
+    const foxconsDTO = this.programEntityToFoxconsDTO(programEntity);
+    console.log(foxconsDTO);
   }
 
   delayEventEnd(

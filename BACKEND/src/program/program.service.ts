@@ -35,7 +35,7 @@ export class ProgramService {
   pushPullProgramService() {
     return this.provider.getListProgram(undefined).then((program) => {
       return this.programRepository
-        .findBy({ eventState: 'scheduled', programSource: 'external' })
+        .findBy({ eventState: 'scheduled', programType: 'schedule' })
         .then((items) => {
           return this.programRepository.remove(items);
         })
@@ -149,7 +149,7 @@ export class ProgramService {
       eventState: 'not_accepted',
       translations: [],
       coLeaders: [],
-      programSource: 'internal',
+      programType: 'activity',
     };
     const prog = await this.programRepository
       .save(programEntity, { reload: true })

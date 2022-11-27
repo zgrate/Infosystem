@@ -11,10 +11,10 @@ import { DbConfigModule } from "../db-config/db-config.module";
   imports: [
     TypeOrmModule.forFeature([AccreditationEntity]),
     TelegramModule,
-    DbConfigModule
+    DbConfigModule,
   ],
   controllers: [AccreditationController],
-  providers: [AccreditationService, AccreditationUpdateTg]
+  providers: [AccreditationService, AccreditationUpdateTg],
+  exports: [AccreditationService],
 })
-export class AccreditationModule {
-}
+export class AccreditationModule {}
