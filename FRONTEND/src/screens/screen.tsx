@@ -61,8 +61,6 @@ export const ScreenMain = (props: {wsEnabled: boolean}) => {
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<DisplayModeType | string>("connecting");
   const [messages, setMessages] = useState<MessagesWrapper>();
-  const [messagesLoading, setMessageLoading] = useState(false);
-  const [forceMessageReload, setForceMessageReload] = useState(false);
   const [peopleMessageIndex, setPeopleMessageIndex] = useState(0);
   // const { sendMessage, lastMessage, readyState } = useWebSocket(process.env.REACT_APP_API_URL!, {
   //   shouldReconnect: (closeEvent) => true,
@@ -188,9 +186,6 @@ export const ScreenMain = (props: {wsEnabled: boolean}) => {
       });
       socketIO.on("screen.settings.update", () => {
         executeUpdate();
-      });
-      socketIO.on("screen.messages.update", () => {
-        setForceMessageReload(true);
       });
       socketIO.on("pong", () => {
         console.log("Ponged!");

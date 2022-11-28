@@ -8,7 +8,7 @@ import { Col, Container, Row } from "react-bootstrap";
 
 const FormatDate = (date: string) => {
   const data = new Date(date);
-  const currentTime = new Date("2022-12-01 12:00");
+  const currentTime = new Date();
   if(currentTime.getDate() === data.getDate())
     return data.getHours().toString().padStart(2, "0") + ":" + data.getMinutes().toString().padStart(2, "0");
   else if(Math.abs(data.getDate()-currentTime.getDate()) === 1){
@@ -52,7 +52,7 @@ const MainTableRow = (props: { program: ProgramEntity, myRoom: string }) => {
     }
   };
   if (props.program.eventState === "cancelled") {
-    return <Row className={"MainStyle"}>
+    return <Row className={"MainStyle"+(props.program.programType === "activity" ? " ActivityStyle" :"")}>
       <Col xs={2} className={"MainStyleCol"}>
         <span className={"Cancelled"}>{FormatDate(props.program.eventStartTime.toString())}</span>
       </Col>
@@ -61,7 +61,7 @@ const MainTableRow = (props: { program: ProgramEntity, myRoom: string }) => {
       </Col>
     </Row>;
   } else if (props.program.eventState === "moved") {
-    return <Row className={"MainStyle"}>
+    return <Row className={"MainStyle"+(props.program.programType === "activity" ? " ActivityStyle" :"")}>
       <Col xs={2} className={"MainStyleCol"}>
         <span
           style={{ textDecoration: !!props.program.eventStartTime ? "line-through" : "" }}
@@ -73,7 +73,7 @@ const MainTableRow = (props: { program: ProgramEntity, myRoom: string }) => {
       </Col>
     </Row>;
   } else {
-    return <Row className={"MainStyle"}>
+    return <Row className={"MainStyle"+(props.program.programType === "activity" ? " ActivityStyle" :"")}>
       <Col xs={2} className={"MainStyleCol"}>
         {FormatDate(props.program.eventStartTime.toString())}
       </Col>
@@ -87,7 +87,7 @@ const MainTableRow = (props: { program: ProgramEntity, myRoom: string }) => {
 const TableRow = (props: { program: ProgramEntity }) => {
 
   if (props.program.eventState === "moved") {
-    return <Row className={"TableRow"}>
+    return <Row className={"TableRow"+(props.program.programType === "activity" ? " ActivityStyle" :"")}>
       <Col xs={3} className={"content"}>
         <span
           className={"Moved"}>{!!props.program.changeStartTime ? FormatDate(props.program.changeStartTime.toString()) : FormatDate(props.program.eventStartTime.toString())}</span>
@@ -100,7 +100,7 @@ const TableRow = (props: { program: ProgramEntity }) => {
           className={"Moved"}>{!!props.program.eventChangedRoom ? props.program.eventChangedRoom : props.program.eventScheduledLocation}</span>
       </Col>
     </Row>;
-  } else if (props.program.eventState === "cancelled") {
+  } else if (props.program.eventState === "cancelled"+(props.program.programType === "activity" ? " ActivityStyle" :"")) {
     return <Row className={"TableRow"}>
       <Col xs={3} className={"content"}>
         <span className={"Cancelled"}>{FormatDate(props.program.eventStartTime.toString())}</span>
@@ -114,7 +114,8 @@ const TableRow = (props: { program: ProgramEntity }) => {
     </Row>;
   } else {
 
-    return <Row className={"TableRow"}>
+    console.log(props.program.programType)
+    return <Row className={"TableRow"+(props.program.programType === "activity" ? " ActivityStyle" :"")}>
       <Col xs={3} className={"content"}>
         {FormatDate(props.program.eventStartTime.toString())}
       </Col>
@@ -156,8 +157,6 @@ const EmptyRow = () => {
 
 export const ProgramFragment = (props: { wsEnabled: boolean, screen: ScreenEntity, socketIO: Socket }) => {
   const [program, setProgram] = useState<ProgramEntity[]>();
-  const [loading, setLoading] = useState(false);
-  const [forceRefresh, setForceRefresh] = useState(false);
   useEffect(() => {
 
     const refreshProgram = () => {

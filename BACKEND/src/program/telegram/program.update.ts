@@ -52,27 +52,37 @@ export class ProgramUpdate {
   async processActivity(@Ctx() ctx: Context<any>, @TGUser() tgUser: User) {
     console.log(ctx.webAppData);
     if (ctx.webAppData.button_text == 'Proponuj!') {
-      const dto: ActivityFormDto = (ctx.webAppData.data.json<ActivityFormDto>());
+      const dto: ActivityFormDto = ctx.webAppData.data.json<ActivityFormDto>();
       dto['tgId'] = tgUser.id;
       dto['tgUsername'] = tgUser.username;
-      this.programService.addActivity(dto).then(async (it) => {
-        if (it) {
-          await ctx.reply(
-            'Dziękujemy za zgłoszenie! Administracja przejrzy twoje zgłoszenie!',
-            {
+      this.programService
+        .addActivity(dto)
+        .then(async (it) => {
+          if (it) {
+            await ctx.reply(
+              'Dziękujemy za zgłoszenie! Administracja przejrzy twoje zgłoszenie!',
+              {
+                reply_markup: {
+                  remove_keyboard: true,
+                },
+              },
+            );
+          } else {
+            await ctx.reply('Wystąpił błąd! Spróbuj ponownie później!', {
               reply_markup: {
-                remove_keyboard: true
-              }
-            }
-          );
-        } else {
+                remove_keyboard: true,
+              },
+            });
+          }
+        })
+        .catch(async (it) => {
+          handleException(it);
           await ctx.reply('Wystąpił błąd! Spróbuj ponownie później!', {
             reply_markup: {
-              remove_keyboard: true
-            }
+              remove_keyboard: true,
+            },
           });
-        }
-      });
+        });
     }
   }
 
@@ -89,7 +99,12 @@ export class ProgramUpdate {
         num = Number(args[0]);
       }
 
-      if (await this.programService.acceptEvent(num)) {
+      if (
+        await this.programService.acceptEvent(num).catch((it) => {
+          handleException(it);
+          return undefined;
+        })
+      ) {
         await ctx.reply('EVENT ACCEPTED!');
       } else {
         await ctx.reply('ERROR');

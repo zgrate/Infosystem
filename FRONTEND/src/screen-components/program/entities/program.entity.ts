@@ -56,4 +56,6 @@ export interface ProgramEntity {
   tgId: number;
 
   userId: number;
+
+  programType: "schedule" | "activity";
 }
