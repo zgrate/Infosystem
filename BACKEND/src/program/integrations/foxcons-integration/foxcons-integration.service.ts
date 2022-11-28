@@ -111,7 +111,7 @@ export class FoxconsIntegrationService extends ProgramIntegrationInterface {
     const halls = await this.listHalls();
 
     if (halls == 'error' || halls == 'unautorized') return undefined;
-    console.log(halls.map((it) => it['details']));
+    // console.log(halls.map((it) => it['details']));
     return this.getInternalScheduleList().then((list) => {
       return Promise.all(
         list.map((schedule) => {
@@ -132,7 +132,7 @@ export class FoxconsIntegrationService extends ProgramIntegrationInterface {
         hall,
       )
       .then((it) => {
-        console.log(it);
+        // console.log(it);
         return true;
       });
   }
@@ -263,7 +263,7 @@ export class FoxconsIntegrationService extends ProgramIntegrationInterface {
         this.getAdminToFoxconsDTO(adminEventDTO, helper),
       )
       .then((it) => {
-        console.log(it.data);
+        // console.log(it.data);
         return it.data;
       })
       .catch((error: AxiosError) => {
@@ -292,16 +292,16 @@ export class FoxconsIntegrationService extends ProgramIntegrationInterface {
       programEntity.translations[0].title +=
         ' - ' + programEntity.eventScheduledLocation;
     }
-    console.log(programEntity);
+    // console.log(programEntity);
     const schedule: ScheduleDto = {
       id: undefined,
       attendanceType: 'everyone',
       canBeExtended: false,
       displayTarget: 'everywhere',
       hallId: roomID, //TODO,
-      helpers: [5],
+      helpers: [26],
       leaderId: programEntity.userId,
-      subLeaders: [5],
+      subLeaders: [],
       timeBegin: programEntity.eventStartTime.toISOString(),
       timeEnd: programEntity.eventEndTime.toISOString(),
       visibilityLevel:
@@ -354,8 +354,10 @@ export class FoxconsIntegrationService extends ProgramIntegrationInterface {
 
   async programAcceptedEvent(programEntity: ProgramEntity, helper = 5) {
     const foxconsDTO = await this.programEntityToFoxconsDTO(programEntity);
-    foxconsDTO.overrideColor =  this.dbConfig.configSync('activity-color')
-    console.log(foxconsDTO);
+    foxconsDTO.overrideColor =  this.dbConfig.configSync('activity-color');
+    foxconsDTO.name = `activity:${programEntity.userId}:${programEntity.translations[0].title}`.slice(0, 100);
+    foxconsDTO.details[0].displayName = "Aktywność: " + foxconsDTO.details[0].displayName;
+    // console.log(foxconsDTO);
     return this.httpService.axiosRef
       .put(
         'event/' + process.env.FOXCONS_EVENT_NAME + '/admin/schedules',

@@ -46,7 +46,7 @@ export const DisplayFragment = (props: { mode: string, screen: ScreenEntity, soc
   } else if (props.mode === "message") {
     return <AdminMessageFragment forceReload={true} />;
   } else if (props.mode === "fursuit"){
-    return <div style={{width: "50%", marginLeft: "auto", marginRight: "auto"}}><FursuitFragment limit={10}/> </div>
+    return <div style={{width: "50%", marginLeft: "auto", marginRight: "auto"}}><FursuitFragment limit={10} ignorePageLimit={false}/> </div>
   }
 
   return <></>;

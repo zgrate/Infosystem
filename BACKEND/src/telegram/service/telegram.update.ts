@@ -35,17 +35,19 @@ export class TelegramUpdate implements OnModuleInit {
         "/fursuity - lista fursuitow\n" +
         "/zlapane - lista zlapanych przez ciebie fursuiterow!\n" +
         "/wyslij_zdjecia (id/nazwa) - dodaje zdjecia do fursuitera\n\n" +
-        "<b>PROGRAM I INNE</b>\n" +
+        "<b>AKTYWNOŚCI, PROGRAM i INNE</b>\n" +
+        "/aktywnosci - informacje, o co chodzi w aktywnosciach?\n"+
         "/program - pokazuje aktualny program\n" +
-        "/proponuj - proponuje dodatkowy punkt programu\n" +
-        "/zdjecia - otwiera czat do wysyłania zdjęc z konwentu!\n\n" +
+        "/proponuj - proponuje dodatkową aktywność\n" +
+        "/zdjecia - otwiera czat do wysyłania zdjęc z konwentu!\n\n"+
         "<b>Komendy dodatkowe:</b>\n" +
         "/ile_do_futrolajek - Ile zostalo do futrolajek?\n" +
         this.telegramService
           .getCommands()
           .filter((it) => !!it.description)
           .map((it) => `/${it.command} - ${it.description}`)
-          .join("\n"),
+          .join("\n")
+        +"\nRenia @futrolajkibot made by Z-Grate",
         { parse_mode: "HTML", reply_markup: {remove_keyboard: true} }
       )
       .catch((error) => handleException(error));

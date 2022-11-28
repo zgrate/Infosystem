@@ -62,7 +62,7 @@ export class ScreenService implements OnModuleInit {
 
     await this.screenDB.save(screen);
 
-    console.log(screen.id);
+    // console.log(screen.id);
     return screen;
   }
 

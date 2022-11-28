@@ -22,7 +22,7 @@ export class ListenerService implements OnApplicationBootstrap {
   async onUpdate(@Ctx() ctx: Context) {
     try {
       const tgUser = ctx.from;
-      console.log(ctx.chat);
+      // console.log(ctx.chat);
       if (ctx.chat.id == this.dbConfig.configSync('photo-forward-group')) {
         this.logger.debug('Trying upload photo...');
         this.photoUploadService

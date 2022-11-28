@@ -3,6 +3,9 @@ import { CreateUpdateAccreditationDto } from "./dto/create-update-accreditation.
 import { AccreditationEntity } from "./entities/accreditation.entity";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Like, Repository } from "typeorm";
+import { OnEvent } from "@nestjs/event-emitter";
+
+export const GET_USER = "user.acc"
 
 @Injectable()
 export class AccreditationService {
@@ -92,4 +95,11 @@ export class AccreditationService {
     return this.accRepository.query("SELECT * FROM accreditation_entity ORDER BY similarity(\"nickname\", $1) DESC LIMIT 1", [term]);
 
   }
+
+  @OnEvent("user.acc")
+  getUser(id: number)
+  {
+    return this.findOne(id);
+  }
+
 }

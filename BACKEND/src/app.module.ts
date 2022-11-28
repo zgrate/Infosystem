@@ -23,7 +23,7 @@ import { StreamingHelperModule } from "./streaming-helper/streaming-helper.modul
 import { DjModule } from "./dj/dj.module";
 
 export const TGException = (ctx, next) => {
-  console.log(next);
+  // console.log(next);
   try {
     next();
   } catch (e) {

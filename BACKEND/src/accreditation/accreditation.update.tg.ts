@@ -13,7 +13,7 @@ export class AccreditationUpdateTg {
 
   @Command("check")
   async checkUser(@Ctx() ctx: Context<any>) {
-    console.log(ctx.chat.username);
+    // console.log(ctx.chat.username);
     if (this.tgService.isAdmin(ctx.chat.username)) {
       const commands: string = ctx.message.text.split(" ").slice(1).join(" ");
       const ren = await this.accreditationService.findOneFilter(commands);

@@ -6,8 +6,9 @@ import { Message } from "telegraf/typings/core/types/typegram";
 import { DbConfigService } from "../../db-config/db-config.service";
 import { Cron } from "@nestjs/schedule";
 import { EventEmitter2, OnEvent } from "@nestjs/event-emitter";
+import { handleException } from "../../exception.filter";
 
-export type ChatTarget = "org" | "security" | "photos_chat";
+export type ChatTarget = 'org' | 'security' | 'photos_chat' | 'main_chat';
 
 export interface ChatForwarder {
   lastMessage: number;
@@ -19,41 +20,49 @@ export interface ChatForwarder {
 export class ChatForwarderService {
   chatForwarding: ChatForwarder[] = [];
 
+  channelMapping: {};
+
   constructor(
     @InjectBot() private botService: Telegraf,
     private dbConfig: DbConfigService,
-    private event: EventEmitter2
+    private event: EventEmitter2,
   ) {
+    this.channelMapping = {
+      org: () => this.dbConfig.config('org_chat'),
+      security: () => this.dbConfig.config('security_chat'),
+      photos_chat: () => this.dbConfig.config('photos_chat'),
+      main_chat: () => this.dbConfig.config('main_group'),
+    };
   }
 
-  @Cron("*/10 * * * * *")
+  @Cron('*/10 * * * * *')
   async checkTimeout() {
     const msgTimeout = await this.dbConfig.config<number>(
-      "chat-forward-timeout",
-      60000
+      'chat-forward-timeout',
+      60000,
     );
 
     const items = this.chatForwarding.filter((it) => {
       // console.log(Date.now() - it.lastMessage)
       return (
-        it.target !== "photos_chat" && Date.now() - it.lastMessage > msgTimeout
+        it.target !== 'photos_chat' && Date.now() - it.lastMessage > msgTimeout
       );
     });
 
     this.chatForwarding = this.chatForwarding.filter(
-      (it) => !items.includes(it)
+      (it) => !items.includes(it),
     );
     for (const it of items) {
       await this.botService.telegram
         .sendMessage(
           it.tgId,
-          "Twoje przekierowanie czatu zostało samoczynnie zakończone!"
+          'Twoje przekierowanie czatu zostało samoczynnie zakończone!',
         )
         .then(() => false);
     }
   }
 
-  @OnEvent("catch.enable")
+  @OnEvent('catch.enable')
   onPhotosUpload(tgId: number) {
     if (this.isForwardingChat(tgId)) {
       this.disableChatForward(tgId);
@@ -65,22 +74,18 @@ export class ChatForwarderService {
     this.chatForwarding.push({
       tgId: from.id,
       lastMessage: Date.now(),
-      target: target
+      target: target,
     });
-    this.event.emit("forwarder.enabled", from.id);
-    await this.botService.telegram.sendMessage(
-      await this.dbConfig.config(
-        target === "org"
-          ? "org_chat"
-          : target === "photos_chat"
-            ? "photos_chat"
-            : "security_chat"
-      ),
-      `Użytkownik ${from.first_name} ${
-        !!from.last_name ? from.last_name : ""
-      } <a href="tg://user?id=${from.id}">oznaczenie</a> otworzył czat!`,
-      { parse_mode: "HTML" }
-    );
+    this.event.emit('forwarder.enabled', from.id);
+    if (target !== 'main_chat') {
+      await this.botService.telegram.sendMessage(
+        await this.channelMapping[target](),
+        `Użytkownik ${from.first_name} ${
+          !!from.last_name ? from.last_name : ''
+        } <a href="tg://user?id=${from.id}">oznaczenie</a> otworzył czat!`,
+        { parse_mode: 'HTML' },
+      );
+    }
   }
 
   disableChatForward(userId: number) {
@@ -94,32 +99,39 @@ export class ChatForwarderService {
 
   async forwardChat(
     message: Message,
-    from: User
-  ): Promise<"please_wait" | "ok" | "no_forward"> {
+    from: User,
+  ): Promise<'please_wait' | 'ok' | 'no_forward'> {
     const chatForwarder = this.chatForwarding.find((it) => it.tgId == from.id);
     if (chatForwarder) {
       if (
-        chatForwarder.target !== "photos_chat" &&
+        ['photos_chat', 'main_chat'].includes(chatForwarder.target) &&
         Date.now() - chatForwarder.lastMessage < 500
       ) {
-        return "please_wait";
+        return 'please_wait';
       } else {
-        await this.botService.telegram.forwardMessage(
-          await this.dbConfig.config(
-            chatForwarder.target === "org"
-              ? "org_chat"
-              : chatForwarder.target === "photos_chat"
-                ? "photos_chat"
-                : "security_chat"
-          ),
-          message.chat.id,
-          message.message_id
-        );
-        chatForwarder.lastMessage = Date.now();
-        return "ok";
+        if (chatForwarder.target !== 'main_chat') {
+          await this.botService.telegram
+            .forwardMessage(
+              await this.channelMapping[chatForwarder.target](),
+              message.chat.id,
+              message.message_id,
+            )
+            .catch((it) => handleException(it));
+        } else {
+          await this.botService.telegram
+            .copyMessage(
+              await this.channelMapping[chatForwarder.target](),
+              message.chat.id,
+              message.message_id,
+            )
+            .catch((it) => handleException(it));
+
+          chatForwarder.lastMessage = Date.now();
+        }
+        return 'ok';
       }
     }
-    return "no_forward";
+    return 'no_forward';
   }
 
   isForwardingChat(id: number) {

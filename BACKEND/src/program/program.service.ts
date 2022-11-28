@@ -13,10 +13,15 @@ import { EventEmitter2, OnEvent } from "@nestjs/event-emitter";
 import { ProgramDescriptionEntity } from "./entities/program-description.entity";
 import { ScreenEntity } from "../shared/entities/screen.entity";
 import { AdminEventDTO } from "./entities/admin-event.dto";
+import { DbConfigService } from "../db-config/db-config.service";
+import { Telegraf } from "telegraf";
+import { InjectBot } from "nestjs-telegraf";
 
 function addMinutes(date, minutes) {
   return new Date(date.getTime() + minutes * 60000);
 }
+
+export const EVENT_DELAY = 'event.delay';
 
 @Injectable()
 export class ProgramService {
@@ -29,6 +34,8 @@ export class ProgramService {
     @InjectRepository(ProgramDescriptionEntity)
     private programDescRepository: Repository<ProgramDescriptionEntity>,
     private eventEmitter: EventEmitter2,
+    private dbConfig: DbConfigService,
+    @InjectBot() private bot: Telegraf
   ) {}
 
   pushPullProgramService() {
@@ -153,6 +160,8 @@ export class ProgramService {
       coLeaders: [],
       programType: 'activity',
     };
+    programEntity.eventStartTime.setHours(programEntity.eventStartTime.getHours() - 1)
+    programEntity.eventEndTime.setHours(programEntity.eventEndTime.getHours() - 1)
     const prog = await this.programRepository
       .save(programEntity, { reload: true })
       .then(async (it) => {
@@ -189,7 +198,8 @@ export class ProgramService {
       .then(async (it) => {
         if (it) {
           const programEntity = await this.provider.addActivity(it);
-          console.log(programEntity);
+          programEntity.internalId = eventId;
+          // console.log(programEntity);
           if (programEntity) {
             const success = await this.programRepository
               .save(programEntity, { reload: true })
@@ -198,7 +208,10 @@ export class ProgramService {
                 return !!it;
               });
             if (success) {
-              this.eventEmitter.emit(PROGRAM_ACCEPTED_EVENT, it);
+              this.eventEmitter.emitAsync(
+                PROGRAM_ACCEPTED_EVENT,
+                programEntity,
+              );
             }
             return success;
           }
@@ -299,6 +312,7 @@ export class ProgramService {
     return this.provider.getListProgram(undefined);
   }
   private logger = new Logger(ProgramService.name);
+
   async delayProgram(id: number, delayMinutes: number) {
     this.logger.debug('Delying ' + id + ' by ' + delayMinutes);
     return this.findProgram(id).then((program) => {
@@ -319,6 +333,7 @@ export class ProgramService {
                     changeEventEndTime: it.timeEnd,
                   },
                 );
+                this.eventEmitter.emitAsync(EVENT_DELAY, program.internalId);
               }
               return !!it;
             });
@@ -329,4 +344,35 @@ export class ProgramService {
       return false;
     });
   }
+
+  @OnEvent(GET_PROGRAM)
+  getProgram(id: number) {
+    this.logger.debug("Getting Verbose");
+    return this.findProgram(id);
+  }
+
+  @OnEvent(EVENT_DELAY)
+  async eventDelay(id: number) {
+    const program = await this.findProgram(id)
+    if (!program) {
+      this.logger.warn(id + " NOT FOUND!")
+      return;
+    }
+    const chat =
+      program.programType == 'schedule'
+        ? this.dbConfig.configSync<string>('telegram-announcement-channel')
+        : this.dbConfig.configSync<string>(
+          'telegram-small-announcement-channel',
+        );
+    await this.bot.telegram.sendMessage(
+      chat,
+      `<b>${program.translations[0].title} zostało opóźnione!
+PLANOWANE ROZPOCZĘCIE: ${program.eventStartTime.toLocaleString("pl", {timeZone: "Europe/Warsaw"})}</b>`,
+      { parse_mode: 'HTML' },
+    );
+  }
+
 }
+
+
+export const GET_PROGRAM = "program.get"

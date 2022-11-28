@@ -3,10 +3,12 @@ import { AdminAuth } from "../admin/auth/admin-auth.decorators";
 import { ProgramService } from "./program.service";
 import { RegisteredScreen } from "../screen-main/screen.decorators";
 import { AdminEventDTO } from "./entities/admin-event.dto";
+import { EventEmitter2 } from "@nestjs/event-emitter";
+import { PROGRAM_ACCEPTED_EVENT } from "./entities/program.entity";
 
 @Controller('program')
 export class ProgramController {
-  constructor(private programService: ProgramService) {}
+  constructor(private programService: ProgramService, private eventEmmiter: EventEmitter2) {}
 
   @Post('/refresh')
   @AdminAuth()
@@ -91,5 +93,10 @@ export class ProgramController {
   @Get('search')
   searchProgram(@Query("term") search: string) {
     return this.programService.searchProgram(search);
+  }
+
+  @Post("test")
+  async test(@Query("id") id: string) {
+    return this.eventEmmiter.emit(PROGRAM_ACCEPTED_EVENT, await this.programService.findProgram(Number(id)))
   }
 }

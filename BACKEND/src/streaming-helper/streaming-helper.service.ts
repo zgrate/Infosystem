@@ -110,7 +110,7 @@ export class StreamingHelperService {
       if (it) {
         this.logger.log('Login to Restreamer Successfull!');
       }
-      console.log(this.httpService.axiosRef.defaults);
+      // console.log(this.httpService.axiosRef.defaults);
       if (it) {
         return this.httpService.axiosRef
           .get(`${process.env.RESTREAMER_API_URL}/api/v3/rtmp`)

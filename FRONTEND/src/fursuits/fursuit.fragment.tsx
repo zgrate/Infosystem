@@ -30,7 +30,7 @@ const FursuitRow = (props: { fursuitIns: any }) => {
   </Row>;
 };
 
-export const FursuitFragment = (props: { limit: number | undefined }) => {
+export const FursuitFragment = (props: { limit: number | undefined, ignorePageLimit: boolean }) => {
 
   const [fursuit, setFursuit] = useState<any[] | undefined>(undefined);
 
@@ -44,7 +44,7 @@ export const FursuitFragment = (props: { limit: number | undefined }) => {
       getData();
     }
     else {
-      if (document.body.clientHeight > window.innerHeight) {
+      if (!props.ignorePageLimit && document.body.clientHeight > window.innerHeight) {
         setFursuit(fursuit?.slice(0, -1))
       }
     }

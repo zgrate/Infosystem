@@ -45,7 +45,7 @@ export class CatchThemAllService {
 
   findFursuits(limit = 99999) {
     return this.catchRepo.query(
-      'SELECT "fursuitName" as "name", "fileName" as "img", COUNT(b."catchId") as "count" FROM public.catch_them_all_entity a LEFT JOIN PUBLIC.catch_them_all_catch_entity b ON a."fursuitId" = b."fursuitFursuitId" GROUP BY a."fursuitId" ORDER BY COUNT DESC LIMIT $1',
+      'SELECT "fursuitName" as "name", "fileName" as "img", COUNT(b."catchId") as "count" FROM public.catch_them_all_entity a LEFT JOIN PUBLIC.catch_them_all_catch_entity b ON a."fursuitId" = b."fursuitFursuitId" GROUP BY a."fursuitId" ORDER BY "count" DESC, "name" ASC LIMIT $1',
       [limit],
     );
 
@@ -172,7 +172,7 @@ export class CatchThemAllService {
       if (fursuit == null) {
         return 'error';
       } else {
-        console.log(fursuit);
+        // console.log(fursuit);
         if (fursuit.catched.some((it) => it.tgId == tgId)) {
           return 'caught';
         } else {

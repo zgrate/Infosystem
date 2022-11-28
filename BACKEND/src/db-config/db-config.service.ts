@@ -30,7 +30,10 @@ export type SettingsKeys =
   | 'photo-forward-group'
   | 'photos-change-time'
   | 'activity-color'
-  | 'fursuits-link';
+  | 'fursuits-link'
+  | 'telegram-small-announcement-channel'
+  | 'telegram-announcement-channel'
+  | 'main_group';
 
 @Injectable()
 export class DbConfigService implements OnModuleInit {

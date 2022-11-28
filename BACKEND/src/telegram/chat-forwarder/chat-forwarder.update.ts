@@ -1,7 +1,7 @@
 import { Command, Ctx, Update } from "nestjs-telegraf";
 import { Context } from "telegraf";
 import { User } from "typegram/manage";
-import { TGUser } from "../telegram.decorators";
+import { TGAdminAuth, TGUser } from "../telegram.decorators";
 import { ChatForwarderService } from "./chat-forwarder.service";
 import { UseGuards } from "@nestjs/common";
 import { BannedGuard } from "../guards/banned.guard";
@@ -11,6 +11,21 @@ import { PrivateChatGuard } from "../guards/private-chat.guard";
 @UseGuards(BannedGuard, PrivateChatGuard)
 export class ChatForwarderUpdate {
   constructor(private chatForwarderService: ChatForwarderService) {
+  }
+  @Command("/toggle_send")
+  @TGAdminAuth()
+  async enableChatForwarding(@Ctx() context: Context, @TGUser() user: User)
+  {
+    if (context.chat.type === "private") {
+      await this.chatForwarderService
+        .enableChatForward("main_chat", user)
+        .then(
+          async (it) =>
+            await context.reply(
+              "Wszystko co napiszesz lub wyślesz zostanie wysłane do na główną grupę!  /disable żeby wyłączyć"
+            )
+        );
+    }
   }
 
   @Command("/org")
