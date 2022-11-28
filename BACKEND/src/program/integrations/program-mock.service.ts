@@ -25,4 +25,8 @@ export class ProgramMockService extends ProgramIntegrationInterface {
     return undefined;
   }
 
+  addActivity(it: ProgramEntity): Promise<ProgramEntity | undefined> {
+    return Promise.resolve(undefined);
+  }
+
 }

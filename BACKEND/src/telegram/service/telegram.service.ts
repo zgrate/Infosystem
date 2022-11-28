@@ -21,17 +21,16 @@ export class TelegramService implements OnModuleInit {
     @InjectBot() private bot: Telegraf,
     private dbConfig: DbConfigService,
     @InjectRepository(TelegramCommandEntity)
-    private repository: Repository<TelegramCommandEntity>
-  ) {
-  }
+    private repository: Repository<TelegramCommandEntity>,
+  ) {}
 
   async throwException() {
-    return this.bot.telegram.sendMessage("621", "ERROR");
+    return this.bot.telegram.sendMessage('621', 'ERROR');
   }
 
   async isBanned(nickname: string): Promise<boolean> {
     return this.dbConfig
-      .config<string[]>("banned", [])
+      .config<string[]>('banned', [])
       ?.then((it) => it.includes(nickname));
   }
 
@@ -44,25 +43,28 @@ export class TelegramService implements OnModuleInit {
   }
 
   async getUsernameUsingChatID(tgId: number) {
-    return this.bot.telegram.getChat(tgId).then((it) => {
-      if (it["username"]) {
-        return it["username"];
-      } else {
-        return undefined;
-      }
-    }).catch(error => handleException(error));
+    return this.bot.telegram
+      .getChat(tgId)
+      .then((it) => {
+        if (it['username']) {
+          return it['username'];
+        } else {
+          return undefined;
+        }
+      })
+      .catch((error) => handleException(error));
   }
 
   async refreshAdmins() {
     this.adminsTG = await this.dbConfig
-      .config<string[]>("tg-admins", ["zgrate"])
+      .config<string[]>('tg-admins', ['zgrate'])
       .then((it) => it.map((it) => it.toLowerCase()));
   }
 
   async sendMessageOnAdminChat(message: any) {
     return await this.bot.telegram.sendMessage(
-      await this.dbConfig.config<number>("admin-group"),
-      message
+      await this.dbConfig.config<number>('admin-group'),
+      message,
     );
   }
 
@@ -80,14 +82,16 @@ Sala: ${program.eventScheduledLocation}
       `;
 
     console.log(html);
-    return this.sendMessageOnAdminChat(html).catch(error => handleException(error));
+    return this.sendMessageOnAdminChat(html).catch((error) =>
+      handleException(error),
+    );
   }
 
   async onModuleInit(): Promise<any> {
-    await this.refreshAdmins().catch(error => handleException(error));
+    await this.refreshAdmins().catch((error) => handleException(error));
 
     this.commandsList = await this.repository.find();
-    await this.loadCommands().catch(error => handleException(error));
+    await this.loadCommands().catch((error) => handleException(error));
   }
 
   getCommands() {
@@ -100,28 +104,33 @@ Sala: ${program.eventScheduledLocation}
 
   async loadCommands() {
     this.commandsList.forEach((it) => {
-      this.logger.log(
-        "Registering " + it.command
-      );
-      this.bot.command(it.command, async (ctx) => {
-        const allowed = await this.dbConfig.config("group-chats", []);
-        if (allowed.includes(ctx.chat.id) || allowed.includes(ctx.chat.type)) {
-          const res = this.getResponse(ctx.message.text.split(" ")[0].slice(1));
-          if (!res) {
-            await ctx.reply("Komenda nie znaleziona!");
-          } else {
-            await ctx.reply(res);
+      this.logger.log('Registering ' + it.command);
+      this.bot
+        .command(it.command, async (ctx) => {
+          const allowed = await this.dbConfig.config('group-chats', []);
+          if (
+            allowed.includes(ctx.chat.id) ||
+            allowed.includes(ctx.chat.type)
+          ) {
+            const res = this.getResponse(
+              ctx.message.text.split(' ')[0].slice(1),
+            );
+            if (!res) {
+              await ctx.reply('Komenda nie znaleziona!');
+            } else {
+              await ctx.reply(res);
+            }
           }
-        }
-      }).catch(error => handleException(error));
+        })
+        .catch((error) => handleException(error));
     });
   }
 
   async getTimeLeftToConvention() {
     return this.dbConfig
-      .config("convention-start", new Date(2022, 12, 1, 12, 0).getTime())
+      .config('convention-start', new Date(2022, 12, 1, 12, 0).getTime())
       .then((it) => {
-        return (it - Date.now());
+        return it - Date.now();
       });
   }
 }

@@ -1,9 +1,9 @@
 import { Injectable } from "@nestjs/common";
-import { SftpClientService } from "nest-sftp";
 import { Telegraf } from "telegraf";
 import { InjectBot } from "nestjs-telegraf";
 import { randomStringGenerator } from "@nestjs/common/utils/random-string-generator.util";
 import { handleException } from "../../exception.filter";
+import { HttpService } from "@nestjs/axios";
 
 // import fetch from 'node-fetch';
 const fetch = require('node-fetch');
@@ -11,8 +11,9 @@ const fetch = require('node-fetch');
 @Injectable()
 export class PhotoUploadService {
   constructor(
-    private sftpService: SftpClientService,
+    // private sftpService: SftpClientService,
     @InjectBot() private tgBot: Telegraf,
+    private httpService: HttpService,
   ) {}
 
   // onModuleInit() {
@@ -44,41 +45,51 @@ export class PhotoUploadService {
     // );
 
     return this.tgBot.telegram.getFileLink(fileId).then((url) => {
-
-      return url;
+      // return url;
       return fetch(url.toString())
         .then((it) => {
           return it.body;
         })
         .then(async (it) => {
-          return this.sftpService
-            .upload(
-              'pierwsza.png',
-              process.env.SFTP_PHOTOS_DIRECTORY +
-                '/' +
-                randomStringGenerator() +
-                '_' +
-                url.pathname.split('/').reverse()[0],
-              {
-                readStreamOptions: {
-                  autoClose: true,
+          return (
+            this.httpService.axiosRef
+              .put(
+                process.env.NEXT_CLOUD_URL +
+                  '/remote.php/dav/files/zgrate/public/photos/' +
+                  randomStringGenerator() +
+                  '_' +
+                  url.pathname.split('/').reverse()[0],
+                it,
+                {
+                  auth: {
+                    username: process.env.NEXT_CLOUD_USERNAME,
+                    password: process.env.NEXT_CLOUD_PASSWORD,
+                  },
                 },
-                pipeOptions: {
-                  end: true,
-                },
-              },
-            )
-            .then((it) => {
-              console.log('OK ' + it);
-              return it;
-            })
-            .finally(() => {
-              console.log('FINALLY');
-            })
-            .catch((error) => {
-              handleException(error);
-              return 'error';
-            });
+              )
+              // .upload(
+              //   'pierwsza.png',
+              //   process.env.SFTP_PHOTOS_DIRECTORY +
+              //     '/' +
+
+              //   {
+              //     readStreamOptions: {
+              //       autoClose: true,
+              //     },
+              //     pipeOptions: {
+              //       end: true,
+              //     },
+              //   },
+              // )
+              .then((it) => {
+                console.log('OK ' + it);
+                return it.status === 201 ? 'ok' : 'error';
+              })
+              .catch((error) => {
+                handleException(error);
+                return 'error';
+              })
+          );
         });
     });
   }

@@ -2,9 +2,9 @@ import { Command, Ctx, On, Update } from "nestjs-telegraf";
 // import { TGUser } from '../../telegram/service/telegram.update';
 import { User } from "typegram/manage";
 import { Context } from "telegraf";
-import { ProgramFormDTO } from "./program-form.dto";
+import { ActivityFormDto } from "./activity-form.dto";
 import { ProgramService } from "../program.service";
-import { TGArguments, TGUser } from "../../telegram/telegram.decorators";
+import { TGAdminAuth, TGArguments, TGUser } from "../../telegram/telegram.decorators";
 import { TelegramService } from "../../telegram/service/telegram.service";
 import { UseGuards } from "@nestjs/common";
 import { BannedGuard } from "../../telegram/guards/banned.guard";
@@ -16,29 +16,28 @@ import { handleException } from "../../exception.filter";
 export class ProgramUpdate {
   constructor(
     private programService: ProgramService,
-    private telegramService: TelegramService
-  ) {
-  }
+    private telegramService: TelegramService,
+  ) {}
 
-  @Command("proponuj")
+  @Command('proponuj')
   @UseGuards(PrivateChatGuard)
   async getProgramProposition(@Ctx() ctx: Context<any>) {
-    if (ctx.chat.type === "private") {
+    if (ctx.chat.type === 'private') {
       await ctx
-        .reply("Kliknij w przycisk aby dodać punkt programu", {
+        .reply('Kliknij w przycisk aby dodać aktywność', {
           reply_markup: {
             one_time_keyboard: true,
             keyboard: [
               [
                 {
-                  text: "Proponuj!",
+                  text: 'Proponuj!',
                   web_app: {
-                    url: "https://res.futrolajki.pl/test.html"
-                  }
-                }
-              ]
-            ]
-          }
+                    url: 'https://res.futrolajki.pl/test.html',
+                  },
+                },
+              ],
+            ],
+          },
         })
         .catch((error) => handleException(error));
     }
@@ -49,30 +48,39 @@ export class ProgramUpdate {
   //   console.log(ctx.chat)
   // }
 
-  @On("web_app_data")
-  async processProgram(@Ctx() ctx: Context<any>, @TGUser() tgUser: User) {
+  @On('web_app_data')
+  async processActivity(@Ctx() ctx: Context<any>, @TGUser() tgUser: User) {
     console.log(ctx.webAppData);
-    if (ctx.webAppData.button_text == "Proponuj!") {
-      const dto: ProgramFormDTO = JSON.parse(ctx.webAppData.data.text());
-      dto["tgId"] = tgUser.id;
-      dto["tgUsername"] = tgUser.username;
-      this.programService.addProgram(dto).then(async (it) => {
+    if (ctx.webAppData.button_text == 'Proponuj!') {
+      const dto: ActivityFormDto = (ctx.webAppData.data.json<ActivityFormDto>());
+      dto['tgId'] = tgUser.id;
+      dto['tgUsername'] = tgUser.username;
+      this.programService.addActivity(dto).then(async (it) => {
         if (it) {
           await ctx.reply(
-            "Dziękujemy za zgłoszenie! Administracja przejrzy twoje zgłoszenie!"
+            'Dziękujemy za zgłoszenie! Administracja przejrzy twoje zgłoszenie!',
+            {
+              reply_markup: {
+                remove_keyboard: true
+              }
+            }
           );
         } else {
-          await ctx.reply("Wystąpił błąd! Spróbuj ponownie później!");
+          await ctx.reply('Wystąpił błąd! Spróbuj ponownie później!', {
+            reply_markup: {
+              remove_keyboard: true
+            }
+          });
         }
       });
     }
   }
 
-  @Command("/accept")
+  @Command('/accept')
   async acceptProgram(
     @Ctx() ctx: Context<any>,
     @TGUser() user: User,
-    @TGArguments() args: string[]
+    @TGArguments() args: string[],
   ) {
     if (this.telegramService.isAdmin(user)) {
       console.log(args);
@@ -82,18 +90,18 @@ export class ProgramUpdate {
       }
 
       if (await this.programService.acceptEvent(num)) {
-        await ctx.reply("EVENT ACCEPTED!");
+        await ctx.reply('EVENT ACCEPTED!');
       } else {
-        await ctx.reply("ERROR");
+        await ctx.reply('ERROR');
       }
     }
   }
 
-  @Command("/deny")
+  @Command('/deny')
   async DenyProgram(
     @Ctx() ctx: Context<any>,
     @TGUser() user: User,
-    @TGArguments() args: string[]
+    @TGArguments() args: string[],
   ) {
     if (this.telegramService.isAdmin(user)) {
       console.log(args);
@@ -103,10 +111,50 @@ export class ProgramUpdate {
       }
 
       if (await this.programService.denyEvent(num)) {
-        await ctx.reply("EVENT ACCEPTED!");
+        await ctx.reply('EVENT ACCEPTED!');
       } else {
-        await ctx.reply("ERROR");
+        await ctx.reply('ERROR');
       }
+    }
+  }
+
+  @Command('/program_search')
+  @TGAdminAuth()
+  async programSearch(
+    @Ctx() ctx: Context<any>,
+    @TGUser() user: User,
+    @TGArguments() args: string[],
+  ) {
+    await this.programService.searchProgram(args.join(' ')).then((items) => {
+      return ctx.reply(
+        items
+          .map(
+            (item) =>
+              `id=${item.internalId}, external=${item.externalId}, name=${item.title}`,
+          )
+          .join('\n'),
+      );
+    });
+  }
+
+  @Command('/delay')
+  @TGAdminAuth()
+  async programDelay(
+    @Ctx() ctx: Context<any>,
+    @TGUser() user: User,
+    @TGArguments() args: string[],
+  ) {
+    if (args.length !== 2) {
+      await ctx.reply('/delay <id> <minutes>');
+    } else {
+      await this.programService
+        .delayProgram(Number(args[0]), Number(args[1]))
+        .then((it) => {
+          return ctx.reply(`${it}`);
+        })
+        .catch((err) => {
+          handleException(err);
+        });
     }
   }
 }

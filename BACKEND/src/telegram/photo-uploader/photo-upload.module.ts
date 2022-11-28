@@ -1,9 +1,9 @@
 import { Module } from "@nestjs/common";
-import { SftpModule } from "nest-sftp";
 import { PhotoUploadService } from "./photo-upload.service";
+import { HttpModule } from "@nestjs/axios";
 
 @Module({
-  imports: [SftpModule.forRoot({}, true)],
+  imports: [HttpModule.register({})],
   providers: [PhotoUploadService],
   exports: [PhotoUploadService],
 })

@@ -1,4 +1,4 @@
-export class ProgramFormDTO {
+export class ActivityFormDto {
   iden: number;
   name: string;
   description: string;

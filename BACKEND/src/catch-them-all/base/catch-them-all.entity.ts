@@ -25,6 +25,9 @@ export class CatchThemAllCatchEntity {
   @PrimaryGeneratedColumn()
   catchId: number;
 
+  @Column({default: new Date()})
+  catchDate: Date;
+
   @ManyToOne(() => CatchThemAllEntity)
   fursuit: CatchThemAllEntity;
 

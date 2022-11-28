@@ -155,6 +155,7 @@ export class CatchThemAllUpdate {
       const status = await this.catchTheAllService.catchFursuit(
         commands[0],
         tgUser.id,
+        !tgUser.username ? tgUser.first_name + (!tgUser.last_name ? "" : tgUser.last_name) : tgUser.username,
       );
       if (status == 'error')
         await ctx.reply('Fursuit ' + commands[0] + ' nie znaleziony!');

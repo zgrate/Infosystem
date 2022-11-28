@@ -64,7 +64,7 @@
   </style>
 </head>
 <body>
-<h4>Formularz dodawania nowego punktu programowego!</h4>
+<h4>Formularz dodawania nowej aktuwności!</h4>
 <form id="main_form" action="">
   <div>
     <label for="iden">Podaj ID w systemie Foxcons:</label>
@@ -72,12 +72,12 @@
   </div>
 
   <div>
-    <label for="name">Nazwa punktu:</label>
+    <label for="name">Nazwa aktywności:</label>
     <input id="name" name="name" maxlength="50">
   </div>
 
   <div>
-    <label for="description">Opis punktu programu:</label>
+    <label for="description">Opis aktywności:</label>
     <input id="description" name="description" maxlength="255">
   </div>
   <div>
@@ -92,7 +92,7 @@
     <fieldset onclick="isSelected()">
       <legend>Wybierz sale:</legend>
       <div>
-        <input type="radio" id="prelekcyjna" name="room" value="prelekcyjna"
+        <input type="radio" id="prelekcyjna" name="room" value="conference-room"
                checked>
         <label for="prelekcyjna">Prelekcyjna</label>
       </div>
@@ -103,22 +103,17 @@
       </div>
 
       <div>
-        <input type="radio" id="stolowka" name="room" value="stolowka">
+        <input type="radio" id="stolowka" name="room" value="dining-room">
         <label for="stolowka">Stolowka</label>
       </div>
 
       <div>
-        <input type="radio" id="poza_hotelem" name="room" value="poza_hotelem">
+        <input type="radio" id="poza_hotelem" name="room" value="outside">
         <label for="poza_hotelem">Poza hotelem</label>
       </div>
 
       <div>
-        <input type="radio" id="lobby" name="room" value="lobby">
-        <label for="lobby">Lobby</label>
-      </div>
-
-      <div>
-        <input type="radio" id="retrostrefa" name="room" value="restosrefa">
+        <input type="radio" id="retrostrefa" name="room" value="retrostrefa">
         <label for="retrostrefa">Retrostrefa</label>
       </div>
 

@@ -166,6 +166,7 @@ export class CatchThemAllService {
   catchFursuit(
     fursuitId: string,
     tgId: number,
+    tgUser: string
   ): Promise<'error' | 'caught' | 'db_error' | string> {
     return this.findFursuit(fursuitId, true).then((fursuit) => {
       if (fursuit == null) {
@@ -178,8 +179,9 @@ export class CatchThemAllService {
           const catched = new CatchThemAllCatchEntity();
           catched.fursuit = fursuit;
           catched.tgId = tgId;
-          catched.tgUsername = 'todo';
+          catched.tgUsername = tgUser;
           catched.photos = [];
+          catched.catchDate = new Date();
           fursuit.catched.push(catched);
           return this.catchRepo
             .save(fursuit, { reload: true })
@@ -236,5 +238,9 @@ export class CatchThemAllService {
         });
       }),
     );
+  }
+
+  getCatches(number: number) {
+
   }
 }

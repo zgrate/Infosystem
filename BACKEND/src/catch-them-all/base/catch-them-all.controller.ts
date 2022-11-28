@@ -13,7 +13,12 @@ export class CatchThemAllController {
 
   @Get("fursuits")
   getFursuits(@Query("limit") limit: number = 10) {
-    return this.catchThemAllService.findFursuits(limit);
+    return this.catchThemAllService.findFursuits(!!limit ? limit : 10);
+  }
+
+  @Get("catchers")
+  getCatchers(@Query("limit") limit: number = 10){
+    return this.catchThemAllService.getCatches(!!limit ? limit : 10)
   }
 
   @Put("fursuits")

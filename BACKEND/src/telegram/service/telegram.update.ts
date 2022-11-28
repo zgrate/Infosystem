@@ -46,7 +46,7 @@ export class TelegramUpdate implements OnModuleInit {
           .filter((it) => !!it.description)
           .map((it) => `/${it.command} - ${it.description}`)
           .join("\n"),
-        { parse_mode: "HTML" }
+        { parse_mode: "HTML", reply_markup: {remove_keyboard: true} }
       )
       .catch((error) => handleException(error));
   }

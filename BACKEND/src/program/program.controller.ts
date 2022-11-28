@@ -80,11 +80,16 @@ export class ProgramController {
           return (
             adminEventDTO.name +
             ' ' +
-            await this.programService.externalAddEvent(adminEventDTO)
+            (await this.programService.externalAddEvent(adminEventDTO))
           );
         }),
       ),
     );
     // return this.programService.externalAddEvent(adminEventDTO)
+  }
+
+  @Get('search')
+  searchProgram(@Query("term") search: string) {
+    return this.programService.searchProgram(search);
   }
 }

@@ -20,7 +20,9 @@ export abstract class ProgramIntegrationInterface {
 
   abstract updateAdminEvent(externalEventID: number, adminEventDTO: AdminEventDTO): Promise<any>;
 
-  abstract delayEventStart(externalEventID: number, startDelay: number): Promise<boolean>;
+  abstract delayEventStart(externalEventID: number, startDelay: number): Promise<any>;
 
   abstract delayEventEnd(externalEventId: number, durationDelay: number): Promise<boolean>;
+
+  abstract addActivity(it: ProgramEntity): Promise<ProgramEntity | undefined>;
 }

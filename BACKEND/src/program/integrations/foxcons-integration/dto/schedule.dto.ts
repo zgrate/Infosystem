@@ -1,7 +1,20 @@
-export const ScheduleEntryVisibilityLevels = ['admin', 'organizator', 'orga-team', 'api', 'member', 'always'] as const;
-export type ScheduleEntryVisibilityLevel = typeof ScheduleEntryVisibilityLevels[number];
+export const ScheduleEntryVisibilityLevels = [
+  'admin',
+  'organizator',
+  'orga-team',
+  'api',
+  'member',
+  'always',
+] as const;
+export type ScheduleEntryVisibilityLevel =
+  typeof ScheduleEntryVisibilityLevels[number];
 
-export const ScheduleEntryTargets = ['everywhere', 'tv', 'api', 'mobile'] as const;
+export const ScheduleEntryTargets = [
+  'everywhere',
+  'tv',
+  'api',
+  'mobile',
+] as const;
 export type ScheduleEntryTarget = typeof ScheduleEntryTargets[number];
 
 /**
@@ -10,13 +23,31 @@ export type ScheduleEntryTarget = typeof ScheduleEntryTargets[number];
  * limited -> everyone can invite themselves, until the maximum number of attendees is reached
  * hidden -> only invited can attend (see) (+orgs, helpers, etc)
  */
-export const ScheduleEntryAttendanceTypes = ['everyone', 'registered', 'limited', 'hidden'] as const;
-export type ScheduleEntryAttendanceType = typeof ScheduleEntryAttendanceTypes[number];
+export const ScheduleEntryAttendanceTypes = [
+  'everyone',
+  'registered',
+  'limited',
+  'hidden',
+] as const;
+export type ScheduleEntryAttendanceType =
+  typeof ScheduleEntryAttendanceTypes[number];
 
 export class ScheduleDetailDto {
   lang = 'PL';
   displayName: string;
   details: string;
+}
+
+export interface HistoryDTO {
+  id: number;
+  reason: string[];
+  isTimeChange: false;
+  isHallChange: false;
+  isDurationChange: false;
+  isDelayed: null;
+  isPublished: false;
+  after: { timeBegin: Date; timeEnd: Date };
+  before: { timeBegin: Date; timeEnd: Date };
 }
 
 export class ScheduleDto {
@@ -42,6 +73,8 @@ export class ScheduleDto {
 
   details: ScheduleDetailDto[];
   overrideColor: string;
+
+  history: HistoryDTO[];
 
   // "name": "system Name",
   // "leaderId": 69,

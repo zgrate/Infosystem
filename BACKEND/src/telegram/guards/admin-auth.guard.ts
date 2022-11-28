@@ -8,9 +8,9 @@ export class AdminAuthorization implements CanActivate {
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    console.log(context.getArgs()[0].update.message.from);
+    // console.log(context.getArgs()[0].update.message.from);
     return this.tgService.isAdmin(
-      context.getArgs()[0].update.message.from.username
+      context.getArgs()[0].update.message.from
     );
 
     // console.log(await this.tgService.getUsernameUsingChatID(context.getArgs()[0].update.message.from.id))

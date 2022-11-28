@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Put } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, Put, Query } from "@nestjs/common";
 import { FoxconsIntegrationService } from "./foxcons-integration.service";
 import { AdminEventDTO } from "../../entities/admin-event.dto";
 
@@ -34,4 +34,28 @@ export class FoxconsIntegrationController {
       ),
     );
   }
+
+  @Get('schedule/lastdiff')
+  getLastDiff(@Query('id') id: number) {
+    return this.foxconsIntegrationService
+      .getListProgram(undefined)
+      .then((it) => {
+        // console.log(it)
+        return it
+          .find((it) => it.externalId == id)
+
+      });
+  }
+
+  // @Get('schedule/search')
+  // searchProgramInDB(@Query('query') query: string) {
+  //   return this.foxconsIntegrationService
+  //     .getListProgram(undefined)
+  //     .then((it) => {
+  //       // console.log(it)
+  //       return it
+  //         .find((it) => it.externalId == id)
+  //
+  //     });
+  // }
 }

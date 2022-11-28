@@ -33,9 +33,6 @@ export class ListenerService implements OnApplicationBootstrap {
               reply_to_message_id: ctx.message.message_id,
             });
           });
-        return ctx.reply("ok", {
-          reply_to_message_id: ctx.message.message_id,
-        });
       } else if (ctx.chat.type == 'private') {
         if (this.chatForwarderService.isForwardingChat(ctx.from.id)) {
           return this.chatForwarderService

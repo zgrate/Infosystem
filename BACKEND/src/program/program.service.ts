@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { ProgramIntegrationInterface } from "./integrations/program-integration.interface";
 import { InjectRepository } from "@nestjs/typeorm";
 import {
@@ -7,9 +7,8 @@ import {
   PROGRAM_UPDATE_EVENT,
   ProgramEntity
 } from "./entities/program.entity";
-import { In, LessThanOrEqual, MoreThanOrEqual, Not, Repository } from "typeorm";
-import { ProgramFormDTO } from "./telegram/program-form.dto";
-import { randomStringGenerator } from "@nestjs/common/utils/random-string-generator.util";
+import { In, IsNull, LessThanOrEqual, MoreThanOrEqual, Not, Repository } from "typeorm";
+import { ActivityFormDto } from "./telegram/activity-form.dto";
 import { EventEmitter2, OnEvent } from "@nestjs/event-emitter";
 import { ProgramDescriptionEntity } from "./entities/program-description.entity";
 import { ScreenEntity } from "../shared/entities/screen.entity";
@@ -35,7 +34,7 @@ export class ProgramService {
   pushPullProgramService() {
     return this.provider.getListProgram(undefined).then((program) => {
       return this.programRepository
-        .findBy({ eventState: 'scheduled', programType: 'schedule' })
+        .findBy({ externalId: Not(IsNull()) })
         .then((items) => {
           return this.programRepository.remove(items);
         })
@@ -52,7 +51,7 @@ export class ProgramService {
     // });
   }
 
-  async getProgramDB(limit: number, currentDate: Date){
+  async getProgramDB(limit: number, currentDate: Date) {
     return this.programRepository.find({
       where: [
         {
@@ -83,7 +82,10 @@ export class ProgramService {
 
   async getProgramForScreens(screen: ScreenEntity) {
     // console.log(screen);
-    return this.getProgramDB(screen.maxMainRoomEntry + screen.maxOtherRoomEntry, this.currentDate());
+    return this.getProgramDB(
+      screen.maxMainRoomEntry + screen.maxOtherRoomEntry,
+      this.currentDate(),
+    );
     // return this.programRepository.find({
     //   take: screen.maxMainRoomEntry + screen.maxOtherRoomEntry,
     //   relations: {
@@ -124,7 +126,7 @@ export class ProgramService {
     return new Date();
   };
 
-  async addProgram(dto: ProgramFormDTO) {
+  async addActivity(dto: ActivityFormDto) {
     const start = new Date(dto.startDate);
     const desc = {
       lang: 'pl',
@@ -134,7 +136,7 @@ export class ProgramService {
       program: undefined,
     };
     const programEntity: ProgramEntity = {
-      externalId: randomStringGenerator(),
+      externalId: undefined,
       eventStartTime: new Date(dto.startDate),
       eventEndTime: addMinutes(start, dto.duration),
       eventScheduledLocation: dto.room,
@@ -186,17 +188,21 @@ export class ProgramService {
       .findOneBy({ internalId: eventId, eventState: 'not_accepted' })
       .then(async (it) => {
         if (it) {
-          it.eventState = 'scheduled';
-          const success = await this.programRepository
-            .save(it, { reload: true })
-            .then((it) => {
-              this.lastProgramID = undefined;
-              return !!it;
-            });
-          if (success) {
-            this.eventEmitter.emit(PROGRAM_ACCEPTED_EVENT, it);
+          const programEntity = await this.provider.addActivity(it);
+          console.log(programEntity);
+          if (programEntity) {
+            const success = await this.programRepository
+              .save(programEntity, { reload: true })
+              .then((it) => {
+                this.lastProgramID = undefined;
+                return !!it;
+              });
+            if (success) {
+              this.eventEmitter.emit(PROGRAM_ACCEPTED_EVENT, it);
+            }
+            return success;
           }
-          return success;
+          return false;
         }
         return false;
       })
@@ -276,7 +282,51 @@ export class ProgramService {
     // })
   }
 
+  findProgram(id: number): Promise<ProgramEntity | null> {
+    return this.programRepository.findOneBy({ internalId: id });
+  }
+
+  searchProgram(
+    search: string,
+  ): Promise<{ internalId: number; externalId: number; title: string }[]> {
+    return this.programRepository.query(
+      'SELECT "internalId", "externalId", "title" FROM PUBLIC.program_entity a LEFT JOIN PUBLIC.program_description_entity b ON b."programInternalId" = a."internalId" ORDER BY similarity(b."title", $1) DESC LIMIT 5',
+      [search],
+    );
+  }
+
   refreshExternalProgram() {
     return this.provider.getListProgram(undefined);
+  }
+  private logger = new Logger(ProgramService.name);
+  async delayProgram(id: number, delayMinutes: number) {
+    this.logger.debug('Delying ' + id + ' by ' + delayMinutes);
+    return this.findProgram(id).then((program) => {
+      if (program) {
+        if (program.externalId) {
+          return this.provider
+            .delayEventStart(program.externalId, delayMinutes)
+            .then(async (it) => {
+              if (it) {
+                program.eventState = 'moved';
+                program.changeStartTime = it.timeBegin;
+                program.changeEventEndTime = it.timeEnd;
+                await this.programRepository.update(
+                  { internalId: program.internalId },
+                  {
+                    eventState: 'moved',
+                    changeStartTime: it.timeBegin,
+                    changeEventEndTime: it.timeEnd,
+                  },
+                );
+              }
+              return !!it;
+            });
+        } else {
+          console.log('DELAY?');
+        }
+      }
+      return false;
+    });
   }
 }

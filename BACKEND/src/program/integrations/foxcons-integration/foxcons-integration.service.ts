@@ -1,11 +1,11 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { ProgramFilter, ProgramIntegrationInterface } from "../program-integration.interface";
-import { PROGRAM_ACCEPTED_EVENT, ProgramEntity } from "../../entities/program.entity";
+import { ProgramEntity } from "../../entities/program.entity";
 import { HttpService } from "@nestjs/axios";
 import { AdminEventDTO } from "src/program/entities/admin-event.dto";
 import { HallDto } from "./dto/hall.dto";
 import { handleException } from "../../../exception.filter";
-import { EventEmitter2, OnEvent } from "@nestjs/event-emitter";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import { ScheduleDto } from "./dto/schedule.dto";
 import { AxiosError } from "axios";
 import { DbConfigService } from "../../../db-config/db-config.service";
@@ -61,6 +61,50 @@ export class FoxconsIntegrationService extends ProgramIntegrationInterface {
     return this.login();
   }
 
+  async getScheduleToProgramEntity(schedule: ScheduleDto) {
+    const halls = await this.listHalls();
+    if (halls == 'error' || halls == 'unautorized') return undefined;
+    const p: ProgramEntity = {
+      externalId: schedule.id,
+      eventStartTime: new Date(schedule.timeBegin),
+      eventEndTime: new Date(schedule.timeEnd),
+      eventType: 'public_duration',
+      eventScheduledLocation: halls.find((it) => it.id == schedule.hallId)[
+        'details'
+      ][0].translatedName,
+      tgId: undefined,
+      tgUser: undefined,
+      userId: schedule.leaderId,
+      coLeaders: schedule.subLeaders,
+      eventState: 'scheduled', //TODO
+      changeEventEndTime: undefined,
+      changeStartTime: undefined,
+      eventChangedRoom: undefined,
+      internalId: undefined,
+      programType: 'schedule',
+      translations: [
+        {
+          program: undefined,
+          id: undefined,
+          title: schedule.details[0].displayName,
+          lang: schedule.details[0].lang,
+          description: schedule.details[0].details,
+        },
+      ],
+
+      //TODO
+    };
+    const diffs = this.getDiffsFromSystem(schedule);
+    if (diffs) {
+      p.changeStartTime = diffs.after.timeBegin;
+      p.changeEventEndTime = diffs.after.timeEnd;
+      p.eventStartTime = diffs.before.timeBegin;
+      p.eventEndTime = diffs.before.timeEnd;
+      p.eventState = 'moved';
+    }
+    return p;
+  }
+
   async getListProgram(
     filter: ProgramFilter | undefined,
   ): Promise<ProgramEntity[]> {
@@ -71,37 +115,7 @@ export class FoxconsIntegrationService extends ProgramIntegrationInterface {
     return this.getInternalScheduleList().then((list) => {
       return Promise.all(
         list.map((schedule) => {
-          const p: ProgramEntity = {
-            externalId: schedule.id,
-            eventStartTime: new Date(schedule.timeBegin),
-            eventEndTime: new Date(schedule.timeEnd),
-            eventType: 'public_duration',
-            eventScheduledLocation: halls.find(
-              (it) => it.id == schedule.hallId,
-            )['details'][0].translatedName,
-            tgId: undefined,
-            tgUser: undefined,
-            userId: schedule.leaderId,
-            coLeaders: schedule.subLeaders,
-            eventState: 'scheduled', //TODO
-            changeEventEndTime: undefined,
-            changeStartTime: undefined,
-            eventChangedRoom: undefined,
-            internalId: undefined,
-            programType: 'schedule',
-            translations: [
-              {
-                program: undefined,
-                id: undefined,
-                title: schedule.details[0].displayName,
-                lang: schedule.details[0].lang,
-                description: schedule.details[0].details,
-              },
-            ],
-
-            //TODO
-          };
-          return p;
+          return this.getScheduleToProgramEntity(schedule);
         }),
       );
     });
@@ -203,6 +217,7 @@ export class FoxconsIntegrationService extends ProgramIntegrationInterface {
         },
       ],
       overrideColor: adminEventDTO.color,
+      history: undefined,
     };
     if (addComment) {
       schedule['editionComment'] = 'Z-Grate System Update';
@@ -258,14 +273,19 @@ export class FoxconsIntegrationService extends ProgramIntegrationInterface {
   }
 
   async programEntityToFoxconsDTO(programEntity: ProgramEntity) {
-    const halls = await this.listHalls();
-    if (halls == 'error' || halls == 'unautorized') return undefined;
+    const halls = await this.listHalls().catch((it) => {
+      handleException(it);
+      return undefined;
+    });
+    if ((!halls && halls == 'error') || halls == 'unautorized')
+      return undefined;
     let roomID = halls.find(
       (it) =>
         it.name == programEntity.eventScheduledLocation ||
-        it.texts.some(
-          (it) => it.translatedName == programEntity.eventScheduledLocation,
-        ),
+        (it.texts &&
+          it.texts.some(
+            (it) => it.translatedName == programEntity.eventScheduledLocation,
+          )),
     )?.id;
     if (!roomID) {
       roomID = halls.find((it) => it.name == 'activity-room').id;
@@ -277,7 +297,7 @@ export class FoxconsIntegrationService extends ProgramIntegrationInterface {
       canBeExtended: false,
       displayTarget: 'everywhere',
       hallId: roomID, //TODO,
-      helpers: [26],
+      helpers: [5],
       leaderId: programEntity.userId,
       subLeaders: [],
       timeBegin: programEntity.eventStartTime.toString(),
@@ -302,14 +322,49 @@ export class FoxconsIntegrationService extends ProgramIntegrationInterface {
         },
       ],
       overrideColor: this.dbConfig.configSync('activity-color'),
+      history: undefined,
     };
     return schedule;
   }
 
-  @OnEvent(PROGRAM_ACCEPTED_EVENT)
-  programAcceptedEvent(programEntity: ProgramEntity) {
-    const foxconsDTO = this.programEntityToFoxconsDTO(programEntity);
+  getDiffsFromSystem(schedule: ScheduleDto): {
+    after: {
+      timeBegin: Date;
+      timeEnd: Date;
+    };
+    before: {
+      timeBegin: Date;
+      timeEnd: Date;
+    };
+  } {
+    const c = schedule.history
+      .filter((it) => it.reason.includes('delay'))
+      .sort((firstEle, sencondEle) => sencondEle.id - firstEle.id);
+    if (c.length > 0) {
+      return {
+        after: c[0].after,
+        before: c[c.length - 1].before,
+      };
+    }
+    return undefined;
+  }
+
+  async programAcceptedEvent(programEntity: ProgramEntity, helper = 5) {
+    const foxconsDTO = await this.programEntityToFoxconsDTO(programEntity);
     console.log(foxconsDTO);
+    return this.httpService.axiosRef
+      .put(
+        'event/' + process.env.FOXCONS_EVENT_NAME + '/admin/schedules',
+        foxconsDTO,
+      )
+      .then((it) => {
+        if (it && it.status !== 200) return undefined;
+        return this.getScheduleToProgramEntity(it.data);
+      }).catch(it => {
+        handleException(it)
+        console.log(it.config.data)
+        return undefined
+      });
   }
 
   delayEventEnd(
@@ -322,7 +377,35 @@ export class FoxconsIntegrationService extends ProgramIntegrationInterface {
   delayEventStart(
     externalEventID: number,
     startDelay: number,
-  ): Promise<boolean> {
-    return Promise.resolve(false);
+  ): Promise<{ timeBegin: string; timeEnd: string } | undefined> {
+    this.logger.debug('DELAY ' + externalEventID + ' = ' + startDelay);
+    return this.httpService.axiosRef
+      .patch(
+        '/event/' +
+          process.env.FOXCONS_EVENT_NAME +
+          '/admin/schedules/' +
+          externalEventID +
+          '/time',
+        {
+          delayTime: 30,
+        },
+      )
+      .then((it) => {
+        if (it.status !== 200) {
+          return undefined;
+        }
+        return {
+          timeBegin: it.data['timeBegin'],
+          timeEnd: it.data['timeEnd'],
+        };
+      })
+      .catch((error) => {
+        handleException(error);
+        return undefined;
+      });
+  }
+
+  addActivity(it: ProgramEntity): Promise<ProgramEntity | undefined> {
+    return this.programAcceptedEvent(it);
   }
 }
