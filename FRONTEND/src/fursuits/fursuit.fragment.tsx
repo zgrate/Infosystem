@@ -73,6 +73,6 @@ export const FursuitFragment = (props: { limit: number | undefined, ignorePageLi
         Liczba złapań
       </Col>
     </Row>
-    {fursuit.map(it => <FursuitRow fursuitIns={it} />)}
+    {fursuit.map(it => <FursuitRow fursuitIns={it} key={it.name} />)}
   </Container>;
 };

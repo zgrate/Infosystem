@@ -5,17 +5,23 @@ import { Socket } from "socket.io-client";
 import { axiosService } from "../../services/AxiosService";
 import "./program.style.css";
 import { Col, Container, Row } from "react-bootstrap";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+
+dayjs.extend(utc);
 
 const FormatDate = (date: string) => {
-  const data = new Date(date);
-  const currentTime = new Date();
-  if(currentTime.getDate() === data.getDate())
-    return data.getHours().toString().padStart(2, "0") + ":" + data.getMinutes().toString().padStart(2, "0");
-  else if(Math.abs(data.getDate()-currentTime.getDate()) === 1){
-    return "Jutro, " + data.getHours().toString().padStart(2, "0") + ":" + data.getMinutes().toString().padStart(2, "0");
+  const data = dayjs.utc(date).add(1, "hour");
+  const currentTime = dayjs(new Date());
+  if(currentTime.date() === data.date())
+    return data.format('HH:mm');
+  else if(Math.abs(data.diff(currentTime, 'day')) >= 0){
+    return `Jutro, ${data.format('HH:mm')}`;
+    // return "Jutro, " + data.getHours().toString().padStart(2, "0") + ":" + data.getMinutes().toString().padStart(2, "0");
   }
   else{
-    return data.getDate().toString().padStart(2, "0")  +"-"+(data.getMonth()+1).toString().padStart(2, "0")  +", " + data.getHours().toString().padStart(2, "0") + ":" + data.getMinutes().toString().padStart(2, "0");
+    return data.format('DD-MM, HH:mm');
+    // return data.getDate().toString().padStart(2, "0")  +"-"+(data.getMonth()+1).toString().padStart(2, "0")  +", " + data.getHours().toString().padStart(2, "0") + ":" + data.getMinutes().toString().padStart(2, "0");
 
   }
 };
@@ -33,7 +39,7 @@ const GenerateTable = (props: { program: ProgramEntity[], fullWidth: boolean }) 
         Sala
       </Col>
     </Row>
-    {props.program.length !== 0 ? props.program.map(it => <TableRow program={it} />) : <EmptyRow />}
+    {props.program.length !== 0 ? props.program.map(it => <TableRow key={it.internalId} program={it} />) : <EmptyRow />}
   </Container>;
 };
 
@@ -141,7 +147,7 @@ const GenerateMainRoomTable = (props: { program: ProgramEntity[], myRoom: string
         <Col xs={2} className={"header column"}>Godzina</Col>
         <Col className={"header column"}>Nazwa punktu</Col>
       </Row>
-      {props.program.length !== 0 ? props.program.map(it => <MainTableRow program={it} myRoom={props.myRoom} />) :
+      {props.program.length !== 0 ? props.program.map(it => <MainTableRow key={it.internalId} program={it} myRoom={props.myRoom} />) :
         <EmptyRow />}
     </Container>
   );

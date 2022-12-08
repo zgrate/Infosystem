@@ -1,7 +1,7 @@
 import { ShowMessage } from "../screen-components/public-messages";
 import { getMarqueeOrg } from "../screen-components/marquee-generator";
 import React, { useEffect, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useParams } from "react-router-dom";
 import io, { Socket } from "socket.io-client";
 import { AdminMessageEntity, DisplayModeType, PeopleMessageEntity, ScreenEntity } from "../screen-admin/screen.entity";
 import { axiosService } from "../services/AxiosService";
@@ -49,7 +49,7 @@ export const DisplayFragment = (props: { mode: string, screen: ScreenEntity, soc
     return <div style={{width: "50%", marginLeft: "auto", marginRight: "auto"}}><FursuitFragment limit={10} ignorePageLimit={false}/> </div>
   }
 
-  return <></>;
+  return <>{props.mode}</>;
 };
 
 var indexCurrent = 0;
@@ -57,10 +57,12 @@ var lastChange = Date.now();
 
 export const ScreenMain = (props: {wsEnabled: boolean}) => {
 
+  const params = useParams();
+
   const [screenSettings, setScreenSettings] = useState<ScreenEntity>();
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<DisplayModeType | string>("connecting");
-  const [messages, setMessages] = useState<MessagesWrapper>();
+  const [messages, setMessages] = useState<MessagesWrapper>({ adminMessages: undefined, peopleMessages: undefined });
   const [peopleMessageIndex, setPeopleMessageIndex] = useState(0);
   // const { sendMessage, lastMessage, readyState } = useWebSocket(process.env.REACT_APP_API_URL!, {
   //   shouldReconnect: (closeEvent) => true,
@@ -68,144 +70,82 @@ export const ScreenMain = (props: {wsEnabled: boolean}) => {
   //   onMessage: ()
   // });
 
+  const executeUpdate = () => {
+    console.log('executeUpdate')
+    axiosService.get("/screen/info/" + localStorage.getItem("screenId"), { validateStatus: (status) => status < 500 }).then(it => {
+      if (it.status > 400) {
+        localStorage.removeItem("screenId");
+      } else {
+        setScreenSettings(it.data);
+        if (it.data.currentDisplayMode !== 'change') {
+          setMode(it.data.currentDisplayMode!);
+        }
+        updateMessages(it.data);
+        const c = document.getElementById("footer")!
+        c.textContent = it.data.name + "Last update" + new Date().toString()
+      }
+      setLoading(false);
+    }).catch(error => {
+      // console.log(error.toJSON())
+      if (error.response) {
+        if (error.response.status === 403) {
+          console.log("THSI IS UNAUTH!");
+        }
+      }
+      return setTimeout(() => {
+        // setMode("connection_error");
+        // setLoading(false);
+        if (error.status === 403) {
+          localStorage.removeItem("screenId");
+        }
+      }, 1000);
 
+    });
+  }
+    const updateMessages = (screenSettings: ScreenEntity) => {
+    (window as any).dupa = [...((window as any).dupa || []), [params.screenid, props.wsEnabled, screenSettings, messages?.peopleMessages, peopleMessageIndex, loading]];
+    console.log('update', params.screenid, props.wsEnabled, screenSettings, messages?.peopleMessages, peopleMessageIndex, loading)
+    if (screenSettings?.peopleMessages && screenSettings?.adminMessages) {
+      axiosService.get("messages").then((res) => {
+        let admins: AdminMessageEntity[] = res.data["admin"];
+        const peoples: PeopleMessageEntity[] = res.data["people"];
+        if (admins.length < 6) {
+          while (admins.length < 6) {
+            admins = admins.concat(admins);
+          }
+        }
+        setMessages({ adminMessages: admins, peopleMessages: peoples });
+        lastUpdate = Date.now();
+      }).catch(it => {
+        console.log("Trying again  soon...");
+      });
+    } else if ((screenSettings?.peopleMessages)) {
+      axiosService.get("messages/people").then((res) => {
+        const peoples: PeopleMessageEntity[] = res.data;
+        setMessages({ peopleMessages: peoples, adminMessages: undefined });
+        lastUpdate = Date.now();
+      }).catch(it => {
+        console.log("Trying again  soon...");
+      });
+    } else if ((screenSettings?.adminMessages)) {
+      axiosService.get("messages/admin").then((res) => {
+        const admins: AdminMessageEntity[] = res.data;
+        setMessages({ peopleMessages: undefined, adminMessages: admins });
+        lastUpdate = Date.now();
+      }).catch(it => {
+        console.log("Trying again  soon...");
+      });
+    }
 
+  };
+
+  console.log(params);
 
   useEffect(() => {
+    executeUpdate();
+  }, []);
 
-    let displayChange: any = undefined;
-    if(screenSettings && screenSettings.currentDisplayMode === "change")
-    {
-      displayChange = setInterval(() => {
-        const m = screenSettings.modesQueue[indexCurrent]
-        if(isNaN(Number(m)))
-        {
-          lastChange = Date.now();
-          setMode(m);
-          indexCurrent++;
-        }
-        else if(Date.now() - lastChange > Number(m)){
-          indexCurrent++;
-        }
-        if(indexCurrent >= screenSettings.modesQueue.length){
-          indexCurrent = 0;
-        }
-
-      }, 1000)
-    }
-
-    const updateMessages = (screenSettings: ScreenEntity) => {
-        if (screenSettings?.peopleMessages && screenSettings?.adminMessages) {
-          axiosService.get("messages").then((res) => {
-            let admins: AdminMessageEntity[] = res.data["admin"];
-            const peoples: PeopleMessageEntity[] = res.data["people"];
-            if (admins.length < 6) {
-              while (admins.length < 6) {
-                admins = admins.concat(admins);
-              }
-            }
-            setMessages({ adminMessages: admins, peopleMessages: peoples });
-            lastUpdate = Date.now();
-          }).catch(it => {
-            console.log("Trying again  soon...");
-          });
-        } else if ( (screenSettings?.peopleMessages)) {
-          axiosService.get("messages/people").then((res) => {
-            const peoples: PeopleMessageEntity[] = res.data;
-            setMessages({ peopleMessages: peoples, adminMessages: undefined });
-            lastUpdate = Date.now();
-          }).catch(it => {
-            console.log("Trying again  soon...");
-          });
-        } else if ((screenSettings?.adminMessages)) {
-          axiosService.get("messages/admin").then((res) => {
-            const admins: AdminMessageEntity[] = res.data;
-            setMessages({ peopleMessages: undefined, adminMessages: admins });
-            lastUpdate = Date.now();
-          }).catch(it => {
-            console.log("Trying again  soon...");
-          });
-        }
-
-    };
-
-    const executeUpdate = () => {
-
-      axiosService.get("/screen/info/" + localStorage.getItem("screenId"), { validateStatus: (status) => status < 500 }).then(it => {
-        if (it.status > 400) {
-          localStorage.removeItem("screenId");
-        } else {
-          setScreenSettings(it.data);
-          setMode(it.data.currentDisplayMode!);
-          updateMessages(it.data);
-          const c = document.getElementById("footer")!
-          c.textContent = it.data.name + "Last update" + new Date().toString()
-        }
-        setLoading(false);
-      }).catch(error => {
-        // console.log(error.toJSON())
-        if (error.response) {
-          if (error.response.status === 403) {
-            console.log("THSI IS UNAUTH!");
-          }
-        }
-        return setTimeout(() => {
-          // setMode("connection_error");
-          // setLoading(false);
-          if (error.status === 403) {
-            localStorage.removeItem("screenId");
-          }
-        }, 1000);
-
-      });
-
-      // setLoading(true);
-      //TODO: Error handling?
-    };
-    var timeout: any = undefined;
-    if(props.wsEnabled) {
-      socketIO.on("connect_error", (data) => {
-        console.log("CONNECTION ERROR" + data);
-        setTimeout(() => {
-          socketIO.connect();
-        }, 5000);
-      });
-
-      // socketIO.on("disconnect", (erro) => {
-      //   disconnectTimes += 1;
-      //   if (disconnectTimes > 5) {
-      //     socketIO.disconnect();
-      //     socketIO.connect();
-      //     disconnectTimes = 0;
-      //   }
-      //   console.log(erro);
-      // });
-      socketIO.on("screen.mode.change", (...args) => {
-        console.log("SCREEN MODE SCHAGNGE");
-        setMode(args[0]);
-      });
-      socketIO.on("screen.settings.update", () => {
-        executeUpdate();
-      });
-      socketIO.on("pong", () => {
-        console.log("Ponged!");
-        lastPong = (Date.now());
-      });
-      socketIO.on("screen.refresh", () => {
-        window.location.reload();
-      });
-      timeout = setInterval(() => {
-        if (Date.now() - lastPong > PING_INTERVAL * 2) {
-          socketIO.disconnect();
-          socketIO.connect();
-          lastPong = (Date.now());
-        } else {
-          socketIO.emit("ping");
-        }
-      }, PING_INTERVAL);
-      socketIO.disconnect();
-      socketIO.connect();
-    }
+  useEffect(() => {
     const peopleMessageTimeout = setInterval(() => {
       if (screenSettings && Date.now() - lastMessageChange > screenSettings?.peopleMessageRotate && screenSettings.peopleMessages && messages?.peopleMessages && messages.peopleMessages.length > 0) {
         lastMessageChange = Date.now();
@@ -217,33 +157,122 @@ export const ScreenMain = (props: {wsEnabled: boolean}) => {
         setPeopleMessageIndex(newMessageIndex);
       }
     }, 1000);
+    return () => {
+      clearInterval(peopleMessageTimeout);
+    };
+  }, [messages.peopleMessages, peopleMessageIndex, screenSettings]);
 
 
-
+  useEffect(() => {
+    console.log('executeUpdate', 'useEffect')
     if (screenSettings === undefined) {
-        executeUpdate();
+      executeUpdate();
+    }
+
+    const autoRepeat = setInterval(() => {
+      executeUpdate();
+    }, props.wsEnabled ? 60000 : 30000)
+    // setLoading(true);
+    //TODO: Error handling?
+
+    return () => {
+      clearInterval(autoRepeat);
+    };
+  }, [props.wsEnabled, screenSettings, updateMessages]);
+  useEffect(() => {
+    if (params.screenid) {
+      console.log("Setting ScreenID")
+      localStorage.setItem("screenId", params.screenid);
+    }
+
+    let displayChange: any = undefined;
+    if (screenSettings && screenSettings.currentDisplayMode === "change") {
+      console.log('ssseting', indexCurrent, screenSettings.modesQueue[indexCurrent])
+      displayChange = setInterval(() => {
+        console.log('setting', indexCurrent, screenSettings.modesQueue[indexCurrent])
+        const m = screenSettings.modesQueue[indexCurrent];
+        if (isNaN(Number(m))) {
+          console.log('setting mode', m);
+          lastChange = Date.now();
+          setMode(m);
+          indexCurrent++;
+        } else if (Date.now() - lastChange > Number(m)) {
+          console.log('setting mode index', m);
+          indexCurrent++;
+        }
+        if (indexCurrent >= screenSettings.modesQueue.length) {
+          console.log('setting mode reset', m);
+
+          indexCurrent = 0;
+        }
+
+      }, 1000)
     }
 
 
-    const autoRepeat = setInterval(()=>{
-      executeUpdate();
-    }, props.wsEnabled ? 60000 : 30000)
+    // {
+    //   var timeout: any = undefined;
+    //   if (props.wsEnabled) {
+    //     socketIO.on("connect_error", (data) => {
+    //       console.log("CONNECTION ERROR" + data);
+    //       setTimeout(() => {
+    //         socketIO.connect();
+    //       }, 5000);
+    //     });
+    //
+    //     // socketIO.on("disconnect", (erro) => {
+    //     //   disconnectTimes += 1;
+    //     //   if (disconnectTimes > 5) {
+    //     //     socketIO.disconnect();
+    //     //     socketIO.connect();
+    //     //     disconnectTimes = 0;
+    //     //   }
+    //     //   console.log(erro);
+    //     // });
+    //     socketIO.on("screen.mode.change", (...args) => {
+    //       console.log("SCREEN MODE SCHAGNGE");
+    //       setMode(args[0]);
+    //     });
+    //     socketIO.on("screen.settings.update", () => {
+    //       executeUpdate();
+    //     });
+    //     socketIO.on("pong", () => {
+    //       console.log("Ponged!");
+    //       lastPong = (Date.now());
+    //     });
+    //     socketIO.on("screen.refresh", () => {
+    //       window.location.reload();
+    //     });
+    //     timeout = setInterval(() => {
+    //       if (Date.now() - lastPong > PING_INTERVAL * 2) {
+    //         socketIO.disconnect();
+    //         socketIO.connect();
+    //         lastPong = (Date.now());
+    //       } else {
+    //         socketIO.emit("ping");
+    //       }
+    //     }, PING_INTERVAL);
+    //     socketIO.disconnect();
+    //     socketIO.connect();
+    //   }
+    // }
 
 
     return () => {
-      timeout && clearInterval(timeout);
-      clearInterval(peopleMessageTimeout);
-      clearInterval(autoRepeat);
+      // timeout && clearInterval(timeout);
+      // clearInterval(peopleMessageTimeout);
+
       displayChange && clearInterval(displayChange);
-      socketIO.off("connect_error");
-      socketIO.off("disconnect");
-      socketIO.off("screen.mode.change");
-      socketIO.off("pong");
-      socketIO.off("screen.settings.update");
-      socketIO.off("screen.messages.update");
-      socketIO.off("screen.refresh");
+      // socketIO.off("connect_error");
+      // socketIO.off("disconnect");
+      // socketIO.off("screen.mode.change");
+      // socketIO.off("pong");
+      // socketIO.off("screen.settings.update");
+      // socketIO.off("screen.messages.update");
+      // socketIO.off("screen.refresh");
     };
-  }, [screenSettings, messages?.peopleMessages, peopleMessageIndex, loading]);
+  }, [params.screenid, screenSettings]);
+
 
   if (!localStorage.getItem("screenId")) {
     return <Navigate replace to={"/auth"} />;

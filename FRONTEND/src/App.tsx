@@ -20,6 +20,7 @@ function App() {
           <Route path="/admin" element={<AdminPanel />} />
           <Route path="/wsscreen" element={<ScreenMain wsEnabled={true} />} />
           <Route path="/screen" element={<ScreenMain wsEnabled={false} />} />
+          <Route path="/screen/:screenid" element={<ScreenMain wsEnabled={false} />} />
           <Route path="/acc" element={<AcreditionSystem />} />
           <Route path="/dj" element={<DJView />} />
           <Route path="/fursuits" element={

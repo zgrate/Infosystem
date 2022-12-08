@@ -5,7 +5,7 @@ export const TimeFragment = ()=>{
     const interval = setInterval(()=>{
       // setTime(new Date())
       const e = document.getElementById("timer")!
-      e.textContent = new Date().toLocaleString()
+      e.textContent = new Date().toLocaleString("pl", {timeZone: "Europe/Warsaw"})
     }, 1000)
     return ()=>{
       clearInterval(interval);

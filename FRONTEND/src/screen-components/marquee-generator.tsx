@@ -3,7 +3,7 @@ import { AdminMessageEntity } from "../screen-admin/screen.entity";
 
 function messageGen(mess: AdminMessageEntity) {
   return (
-    <span className="MarqueeText">
+    <span key={mess.id} className="MarqueeText">
           {mess.message}
       </span>
   );
